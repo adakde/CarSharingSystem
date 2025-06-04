@@ -17,5 +17,9 @@ namespace CarSharingSystem.Models.Entities
         public double Range { get; set; }
         public double LoadingTime { get; set; }
         public CarStatus Status { get; set; }
+        public double PricePerDay { get; set; }
+        public string Location { get; set; }
+        public User User { get; set; }
+        public List<Rental> Rentals { get; set; }
     }
 }
