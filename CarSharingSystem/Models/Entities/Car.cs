@@ -13,9 +13,9 @@ namespace CarSharingSystem.Models.Entities
         [Required]
         public int YearOfProduction { get; set; }
         [Required]
-        public string? Body { get; set; }
+        public CarType CarType { get; set; }
         public double Range { get; set; }
         public double LoadingTime { get; set; }
-        public Status Status { get; set; }
+        public CarStatus Status { get; set; }
     }
 }
