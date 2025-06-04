@@ -1,6 +1,6 @@
 ﻿namespace CarSharingSystem.Models.Enums
 {
-    public enum CarTypes
+    public enum CarType
     {
         Sedan,
         Hatchback,

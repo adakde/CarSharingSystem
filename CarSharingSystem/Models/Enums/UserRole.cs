@@ -1,6 +1,6 @@
 ﻿namespace CarSharingSystem.Models.Enums
 {
-    public enum Roles
+    public enum UserRole
     {
         User,
         Worker,

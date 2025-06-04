@@ -11,7 +11,7 @@ namespace CarSharingSystem.Models.Entities
         public int NumberOfDriverLicense { get; set; }
         public string CountryOfDriverLicense { get; set; } = string.Empty;
         public string PhoneNumber { get; set; }
-        public Roles Role {  get; set; }
+        public UserRole Role {  get; set; }
         public string HistoryOfRental { get; set; }
     }
 }
