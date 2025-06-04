@@ -1,6 +1,6 @@
 ﻿namespace CarSharingSystem.Models.Enums
 {
-    public enum Status
+    public enum CarStatus
     {
         Available,
         Borrowed,
