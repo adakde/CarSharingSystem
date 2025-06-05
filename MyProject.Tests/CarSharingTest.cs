@@ -1,6 +1,6 @@
 ﻿namespace MyProject.Tests;
 
-public class UnitTest1
+public class CarSharingTest
 {
     [Fact]
     public void Test1()
