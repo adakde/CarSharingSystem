@@ -10,7 +10,7 @@ namespace CarSharingSystem.Models.Entities
         public DateTime StartRental { get; set; }
         public DateTime EndRental { get; private set; }
         public RentalStatus Status { get; set; }
-        public double RentalPrice { get; set; }
+        public decimal RentalPrice { get; set; }
         public PaymentMethod MethodOfPayment { get; set; }
         public bool IsPaid { get; set; }
         public string Description { get; set; }
