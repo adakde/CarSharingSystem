@@ -26,6 +26,17 @@ namespace CarSharingSystem.Data
             modelBuilder.Entity<Rental>()
                 .Property(c => c.RentalPrice)
                 .HasPrecision(18, 2);
+            modelBuilder.Entity<Rental>()
+                .HasOne(r => r.User)
+                .WithMany() 
+                .HasForeignKey(r => r.UserId)
+                .OnDelete(DeleteBehavior.Restrict); 
+
+            modelBuilder.Entity<Rental>()
+                .HasOne(r => r.Car)
+                .WithMany(c => c.Rentals)
+                .HasForeignKey(r => r.CarId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

@@ -24,7 +24,7 @@ namespace CarSharingSystem.Migrations
 
             modelBuilder.Entity("CarSharingSystem.Models.Entities.Car", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<Guid>("CarId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
@@ -60,22 +60,17 @@ namespace CarSharingSystem.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<int>("YearOfProduction")
                         .HasColumnType("int");
 
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
+                    b.HasKey("CarId");
 
                     b.ToTable("Cars");
                 });
 
             modelBuilder.Entity("CarSharingSystem.Models.Entities.Rental", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<Guid>("RentalId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
@@ -115,7 +110,7 @@ namespace CarSharingSystem.Migrations
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.HasKey("Id");
+                    b.HasKey("RentalId");
 
                     b.HasIndex("CarId");
 
@@ -126,7 +121,7 @@ namespace CarSharingSystem.Migrations
 
             modelBuilder.Entity("CarSharingSystem.Models.Entities.User", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<Guid>("UserId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
@@ -160,20 +155,9 @@ namespace CarSharingSystem.Migrations
                     b.Property<int>("Role")
                         .HasColumnType("int");
 
-                    b.HasKey("Id");
+                    b.HasKey("UserId");
 
                     b.ToTable("Users");
-                });
-
-            modelBuilder.Entity("CarSharingSystem.Models.Entities.Car", b =>
-                {
-                    b.HasOne("CarSharingSystem.Models.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("CarSharingSystem.Models.Entities.Rental", b =>
@@ -187,7 +171,7 @@ namespace CarSharingSystem.Migrations
                     b.HasOne("CarSharingSystem.Models.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Car");

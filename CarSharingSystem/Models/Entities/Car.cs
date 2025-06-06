@@ -5,7 +5,7 @@ namespace CarSharingSystem.Models.Entities
 {
     public class Car
     {
-        public Guid Id { get; set; }
+        public Guid CarId { get; set; }
         [Required]
         public string Brand { get; set; }
         [Required]
@@ -20,7 +20,6 @@ namespace CarSharingSystem.Models.Entities
         public CarStatus Status { get; set; }
         public decimal PricePerDay { get; set; }
         public string Location { get; set; }
-        public User User { get; set; }
         public List<Rental> Rentals { get; set; }
     }
 }
