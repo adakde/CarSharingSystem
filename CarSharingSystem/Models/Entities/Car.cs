@@ -19,7 +19,7 @@ namespace CarSharingSystem.Models.Entities
         public double LoadingTime { get; set; }
         public CarStatus Status { get; set; }
         public decimal PricePerDay { get; set; }
-        public string Location { get; set; }
-        public List<Rental> Rentals { get; set; }
+        public string? Location { get; set; }
+        public List<Rental>? Rentals { get; set; }
     }
 }
