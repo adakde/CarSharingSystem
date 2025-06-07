@@ -73,7 +73,7 @@ namespace CarSharingSystem.Data
                     EndRental = DateTime.Now.AddDays(2),
                     Status = RentalStatus.Active,
                     MethodOfPayment = PaymentMethod.CreditCard,
-                    RentalPrice = 900 // 3 dni * 300 zł
+                    RentalPrice = 900 
                 }
             );
         }
