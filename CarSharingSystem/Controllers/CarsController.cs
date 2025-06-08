@@ -58,6 +58,17 @@ namespace CarSharingSystem.Controllers
 
             return Ok(cars);
         }
+        [HttpGet("available")]
+        public async Task<IActionResult> GetAvailableCars()
+        {
+            var cars = await _context.Cars.Where(c => c.Status == CarStatus.Available).ToListAsync();
+            if (!cars.Any())
+            {
+                return NotFound("No found available cars");
+            }
+            return Ok(cars);
+        }
+        
         [HttpDelete]
         [Route("DeleteAll")]
         public async Task<IActionResult> DeleteAll()
