@@ -8,11 +8,11 @@ namespace CarSharingSystem.Models.Entities
         [Required]
         public Guid UserId { get; set; }
         [Required]
-        public string Name { get; set; }
+        public required string Name { get; set; }
         [Required]
-        public string Email { get; set; }
+        public required string Email { get; set; }
         [Required]
-        public string Password { get; set; } // Right now without hashing password
+        public required string Password { get; set; } // Right now without hashing password
         public int NumberOfDriverLicense { get; set; }
         public string? CountryOfDriverLicense { get; set; } = string.Empty;
         public string? PhoneNumber { get; set; }
