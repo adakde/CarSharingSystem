@@ -1,4 +1,5 @@
 ﻿using CarSharingSystem.Data;
+using CarSharingSystem.Models.Entities;
 using CarSharingSystem.Models.Enums;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -56,6 +57,23 @@ namespace CarSharingSystem.Controllers
                 .ToListAsync();
 
             return Ok(cars);
+        }
+        [HttpDelete]
+        [Route("DeleteAll")]
+        public async Task<IActionResult> DeleteAll()
+        {
+            var cars = await _context.Cars.ToListAsync();
+            if(cars.Any())
+            {
+                _context.Cars.RemoveRange(cars);
+                await _context.SaveChangesAsync();
+                return Ok($"Deleted {cars.Count} cars");
+            }
+            else
+            {
+                return NotFound("No cars found to delete");
+            }
+
         }
 
     }
