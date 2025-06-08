@@ -89,22 +89,30 @@ namespace CarSharingSystem.Controllers
             var car = await _context.Cars.FindAsync(id);
             if (car == null)
             {
-                return NotFound("Not found car for update");
+                return NotFound("Car not found");
             }
-            else
+
+            // Update only provided fields
+            if (model.Brand != null) car.Brand = model.Brand;
+            if (model.Model != null) car.Model = model.Model;
+            if (model.YearOfProduction.HasValue) car.YearOfProduction = model.YearOfProduction.Value;
+            if (model.CarType.HasValue) car.CarType = model.CarType.Value;
+            if (model.Battery.HasValue) car.Battery = (decimal)model.Battery.Value;
+            if (model.Range.HasValue) car.Range = model.Range.Value;
+            if (model.LoadingTime.HasValue) car.LoadingTime = model.LoadingTime.Value;
+            if (model.Status.HasValue) car.Status = model.Status.Value;
+            if (model.PricePerDay.HasValue) car.PricePerDay = model.PricePerDay.Value;
+            if (model.Location != null) car.Location = model.Location;
+
+            try
             {
-                car.Brand = model.Brand;
-                car.Model = model.Model;
-                car.YearOfProduction = model.YearOfProduction;
-                car.CarType = model.CarType;
-                car.Battery = model.Battery;
-                car.Range = model.Range;
-                car.LoadingTime = model.LoadingTime;
-                car.Status = model.Status;
-                car.PricePerDay = model.PricePerDay;
-                car.Location = model.Location;
                 await _context.SaveChangesAsync();
-                return RedirectToAction("Read");
+                return Ok(car); // Return the updated car object
+                                // Or if you have a DTO: return Ok(_mapper.Map<CarDto>(car));
+            }
+            catch (DbUpdateException ex)
+            {
+                return StatusCode(500, "Error updating car");
             }
         }
         [HttpPost]
