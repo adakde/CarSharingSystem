@@ -58,7 +58,8 @@ namespace CarSharingSystem.Controllers
 
             return Ok(cars);
         }
-        [HttpGet("available")]
+        [HttpGet]
+        [Route("Available")]
         public async Task<IActionResult> GetAvailableCars()
         {
             var cars = await _context.Cars.Where(c => c.Status == CarStatus.Available).ToListAsync();
@@ -68,7 +69,35 @@ namespace CarSharingSystem.Controllers
             }
             return Ok(cars);
         }
-        
+        [HttpGet]
+        [Route("GetById")]
+        public async Task<IActionResult> GetById(Guid id)
+        {
+            var car = await _context.Cars.FindAsync(id);
+            if (car == null)
+            {
+                return NotFound("Not found car id");
+            }
+            return Ok(car);
+        }
+        [HttpPost]
+        [Route("AddCar")]
+        public async Task<IActionResult> AddCar([FromBody] Car newCar)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            newCar.CarId = Guid.NewGuid();
+
+            _context.Cars.Add(newCar);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetById), new { id = newCar.CarId }, newCar);
+
+        }
+
+
         [HttpDelete]
         [Route("DeleteAll")]
         public async Task<IActionResult> DeleteAll()
