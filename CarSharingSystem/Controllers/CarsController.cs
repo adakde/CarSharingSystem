@@ -69,6 +69,7 @@ namespace CarSharingSystem.Controllers
             }
             return Ok(cars);
         }
+
         [HttpGet]
         [Route("GetById")]
         public async Task<IActionResult> GetById(Guid id)
@@ -79,6 +80,32 @@ namespace CarSharingSystem.Controllers
                 return NotFound("Not found car id");
             }
             return Ok(car);
+        }
+        [HttpPut]
+        [Route("UpdateById")]
+        public async Task<IActionResult> UpdateById(Guid id, Car model)
+        {
+            var car = await _context.Cars.FindAsync(id);
+            if (car == null)
+            {
+                return NotFound("Not found car for update");
+            }
+            else
+            {
+                car.Brand = model.Brand;
+                car.Status = model.Status;
+                car.Battery = model.Battery;
+                car.PricePerDay = model.PricePerDay;
+                car.CarType = model.CarType;
+                car.LoadingTime = model.LoadingTime;
+                car.Model = model.Model;
+                car.Range = model.Range;
+                car.YearOfProduction = model.YearOfProduction;
+                car.Rentals = model.Rentals;
+                car.Location = model.Location;
+                _context.SaveChanges();
+                return RedirectToAction("Read");
+            }
         }
         [HttpPost]
         [Route("AddCar")]
@@ -94,9 +121,7 @@ namespace CarSharingSystem.Controllers
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetById), new { id = newCar.CarId }, newCar);
-
         }
-
 
         [HttpDelete]
         [Route("DeleteAll")]
