@@ -1,4 +1,5 @@
 using CarSharingSystem.Data;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
@@ -12,5 +13,12 @@ app.MapOpenApi();
 
 // Add Scalar
 app.MapScalarApiReference();
+
+
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<CarSharingContext>();
+    context.Database.EnsureCreated(); // Stworzy bazê i zaaplikuje seed
+}
 
 app.Run();

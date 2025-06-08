@@ -37,6 +37,13 @@ namespace CarSharingSystem.Data
                 .WithMany(c => c.Rentals)
                 .HasForeignKey(r => r.CarId)
                 .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<Rental>()
+                .HasOne(r => r.Car)
+                .WithMany(c => c.Rentals)
+                .HasForeignKey(r => r.CarId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Seed();
         }
     }
 }

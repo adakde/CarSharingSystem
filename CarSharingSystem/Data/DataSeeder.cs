@@ -1,6 +1,7 @@
 ﻿using CarSharingSystem.Models.Entities;
 using CarSharingSystem.Models.Enums;
 using Microsoft.EntityFrameworkCore;
+using BCrypt.Net;
 
 namespace CarSharingSystem.Data
 {
@@ -8,24 +9,32 @@ namespace CarSharingSystem.Data
     {
         public static void Seed(this ModelBuilder modelBuilder)
         {
-            SeedUsers(modelBuilder);
-            SeedCars(modelBuilder);
-            SeedRentals(modelBuilder);
+            // Stałe identyfikatory dla spójności danych
+            var adminId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+            var userId = Guid.Parse("00000000-0000-0000-0000-000000000002");
+            var car1Id = Guid.Parse("00000000-0000-0000-0000-000000000003");
+            var car2Id = Guid.Parse("00000000-0000-0000-0000-000000000004");
+            var rentalId = Guid.Parse("00000000-0000-0000-0000-000000000005");
+
+            SeedUsers(modelBuilder, adminId, userId);
+            SeedCars(modelBuilder, car1Id, car2Id);
+            SeedRentals(modelBuilder, rentalId, userId, car1Id);
         }
-        private static void SeedUsers(ModelBuilder modelBuilder)
+
+        private static void SeedUsers(ModelBuilder modelBuilder, Guid adminId, Guid userId)
         {
             modelBuilder.Entity<User>().HasData(
                 new User
                 {
-                    UserId = Guid.NewGuid(),
+                    UserId = adminId,
                     Email = "admin@example.com",
-                    Password = "Admin123!", // Hashowanie hasła
+                    Password = "Admin123!",
                     Name = "Admin",
                     Role = UserRole.Admin
                 },
                 new User
                 {
-                    UserId = Guid.NewGuid(),
+                    UserId = userId,
                     Email = "user1@example.com",
                     Password = "User123!",
                     Name = "Jan Kowalski",
@@ -33,24 +42,26 @@ namespace CarSharingSystem.Data
                 }
             );
         }
-        private static void SeedCars(ModelBuilder modelBuilder)
+
+        private static void SeedCars(ModelBuilder modelBuilder, Guid car1Id, Guid car2Id)
         {
             modelBuilder.Entity<Car>().HasData(
                 new Car
                 {
-                    CarId = Guid.NewGuid(),
+                    CarId = car1Id,
                     Brand = "Tesla",
                     Model = "Model 3",
                     YearOfProduction = 2022,
-                    Range = 450, // km
-                    LoadingTime = 8, // godziny
+                    Range = 450,
+                    LoadingTime = 8,
                     CarType = CarType.Sedan,
                     Status = CarStatus.Available,
-                    PricePerDay = 300
+                    PricePerDay = 300,
+                    Battery = 100.00m
                 },
                 new Car
                 {
-                    CarId = Guid.NewGuid(),
+                    CarId = car2Id,
                     Brand = "Tesla",
                     Model = "Model X",
                     YearOfProduction = 2021,
@@ -58,22 +69,25 @@ namespace CarSharingSystem.Data
                     LoadingTime = 6,
                     CarType = CarType.Hatchback,
                     Status = CarStatus.Available,
-                    PricePerDay = 200
+                    PricePerDay = 200,
+                    Battery = 85.50m
                 }
             );
         }
-        private static void SeedRentals(ModelBuilder modelBuilder)
-        {
 
+        private static void SeedRentals(ModelBuilder modelBuilder, Guid rentalId, Guid userId, Guid carId)
+        {
             modelBuilder.Entity<Rental>().HasData(
                 new Rental
                 {
-                    RentalId = Guid.NewGuid(),
-                    StartRental = DateTime.Now.AddDays(-1),
-                    EndRental = DateTime.Now.AddDays(2),
+                    RentalId = rentalId,
+                    UserId = userId,
+                    CarId = carId,
+                    StartRental = new DateTime(2024, 6, 7),
+                    EndRental = new DateTime(2024, 6, 10),
                     Status = RentalStatus.Active,
                     MethodOfPayment = PaymentMethod.CreditCard,
-                    RentalPrice = 900 
+                    RentalPrice = 900
                 }
             );
         }

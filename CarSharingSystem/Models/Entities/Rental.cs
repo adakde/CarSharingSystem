@@ -15,8 +15,8 @@ namespace CarSharingSystem.Models.Entities
         public decimal RentalPrice { get; set; }
         public PaymentMethod MethodOfPayment { get; set; }
         public bool IsPaid { get; set; }
-        public string? Description { get; set; }
-        public string? Caution { get; set; }
+        public string Description { get; set; } = string.Empty;
+        public string Caution { get; set; } = string.Empty;
         public double Mileage { get; set; }
     }
 }

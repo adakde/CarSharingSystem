@@ -7,9 +7,9 @@ namespace CarSharingSystem.Models.Entities
     {
         public Guid CarId { get; set; }
         [Required]
-        public string Brand { get; set; }
+        public string Brand { get; set; } = string.Empty;
         [Required]
-        public string Model { get; set; }
+        public string Model { get; set; } = string.Empty;
         [Required]
         public int YearOfProduction { get; set; }
         [Required]
@@ -19,7 +19,7 @@ namespace CarSharingSystem.Models.Entities
         public double LoadingTime { get; set; }
         public CarStatus Status { get; set; }
         public decimal PricePerDay { get; set; }
-        public string? Location { get; set; }
+        public string Location { get; set; } = string.Empty;
         public List<Rental>? Rentals { get; set; }
     }
 }
