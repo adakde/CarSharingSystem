@@ -1,4 +1,5 @@
 ﻿using CarSharingSystem.Data;
+using CarSharingSystem.DTOs;
 using CarSharingSystem.Models.Entities;
 using CarSharingSystem.Models.Enums;
 using Microsoft.AspNetCore.Mvc;
@@ -83,7 +84,7 @@ namespace CarSharingSystem.Controllers
         }
         [HttpPut]
         [Route("UpdateById")]
-        public async Task<IActionResult> UpdateById(Guid id, Car model)
+        public async Task<IActionResult> UpdateById(Guid id, [FromBody] CarUpdateDto model)
         {
             var car = await _context.Cars.FindAsync(id);
             if (car == null)
@@ -93,17 +94,16 @@ namespace CarSharingSystem.Controllers
             else
             {
                 car.Brand = model.Brand;
-                car.Status = model.Status;
-                car.Battery = model.Battery;
-                car.PricePerDay = model.PricePerDay;
-                car.CarType = model.CarType;
-                car.LoadingTime = model.LoadingTime;
                 car.Model = model.Model;
-                car.Range = model.Range;
                 car.YearOfProduction = model.YearOfProduction;
-                car.Rentals = model.Rentals;
+                car.CarType = model.CarType;
+                car.Battery = model.Battery;
+                car.Range = model.Range;
+                car.LoadingTime = model.LoadingTime;
+                car.Status = model.Status;
+                car.PricePerDay = model.PricePerDay;
                 car.Location = model.Location;
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
                 return RedirectToAction("Read");
             }
         }
