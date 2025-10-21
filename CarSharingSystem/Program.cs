@@ -1,4 +1,5 @@
 using CarSharingSystem.Data;
+using CarSharingSystem.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -36,7 +37,18 @@ builder.Services
             IssuerSigningKey = new SymmetricSecurityKey(key)
         };
     });
+builder.Services.AddScoped<TokenService>();
+builder.Services.AddScoped<PaymentService>();
 builder.Services.AddAuthentication();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:8080")
+    .AllowAnyHeader()
+    .AllowAnyMethod();
+    });
+});
 var app = builder.Build();
 app.MapOpenApi();
 
@@ -54,6 +66,8 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowFrontend");
 
 app.UseAuthorization();
 
