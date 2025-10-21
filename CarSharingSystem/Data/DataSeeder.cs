@@ -28,7 +28,7 @@ namespace CarSharingSystem.Data
                 {
                     UserId = adminId,
                     Email = "admin@example.com",
-                    Password = "Admin123!",
+                    Password = BCrypt.Net.BCrypt.HashPassword("Admin123!"),
                     Name = "Admin",
                     Role = UserRole.Admin
                 },
@@ -36,7 +36,7 @@ namespace CarSharingSystem.Data
                 {
                     UserId = userId,
                     Email = "user1@example.com",
-                    Password = "User123!",
+                    Password = BCrypt.Net.BCrypt.HashPassword("User123!"),
                     Name = "Jan Kowalski",
                     Role = UserRole.User
                 }

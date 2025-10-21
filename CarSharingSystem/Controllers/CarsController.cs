@@ -107,8 +107,7 @@ namespace CarSharingSystem.Controllers
             try
             {
                 await _context.SaveChangesAsync();
-                return Ok(car); // Return the updated car object
-                                // Or if you have a DTO: return Ok(_mapper.Map<CarDto>(car));
+                return Ok(car);
             }
             catch (DbUpdateException ex)
             {

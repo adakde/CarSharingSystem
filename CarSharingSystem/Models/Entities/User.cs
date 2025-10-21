@@ -12,7 +12,7 @@ namespace CarSharingSystem.Models.Entities
         [Required]
         public required string Email { get; set; }
         [Required]
-        public required string Password { get; set; } // Right now without hashing password
+        public required string Password { get; set; } 
         public int NumberOfDriverLicense { get; set; }
         public string? CountryOfDriverLicense { get; set; } = string.Empty;
         public string? PhoneNumber { get; set; }
