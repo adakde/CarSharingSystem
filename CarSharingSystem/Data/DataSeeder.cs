@@ -48,7 +48,7 @@ namespace CarSharingSystem.Data
             modelBuilder.Entity<Car>().HasData(
                 new Car
                 {
-                    CarId = car1Id,
+                    CarId = Guid.Parse("00000000-0000-0000-0000-000000000003"),
                     Brand = "Tesla",
                     Model = "Model 3",
                     YearOfProduction = 2022,
@@ -61,7 +61,7 @@ namespace CarSharingSystem.Data
                 },
                 new Car
                 {
-                    CarId = car2Id,
+                    CarId = Guid.Parse("00000000-0000-0000-0000-000000000004"),
                     Brand = "Tesla",
                     Model = "Model X",
                     YearOfProduction = 2021,
@@ -73,6 +73,7 @@ namespace CarSharingSystem.Data
                     Battery = 85.50m
                 }
             );
+
         }
 
         private static void SeedRentals(ModelBuilder modelBuilder, Guid rentalId, Guid userId, Guid carId)

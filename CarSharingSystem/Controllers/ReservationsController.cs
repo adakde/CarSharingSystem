@@ -27,9 +27,15 @@ namespace CarSharingSystem.Controllers
 
         private Guid CurrentUserId()
         {
-            var sub = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-            return Guid.Parse(sub!);
+            var sub = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                   ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+            if (string.IsNullOrEmpty(sub))
+                throw new UnauthorizedAccessException("Brak identyfikatora użytkownika w tokenie JWT.");
+
+            return Guid.Parse(sub);
         }
+
         [HttpPost("create")]
         public async Task<IActionResult> Create([FromBody] ReservationCreateDto dto)
         {

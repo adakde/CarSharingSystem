@@ -8,22 +8,23 @@
         body {
             font-family: Arial, sans-serif;
             background: #f4f7f8;
-            color: #333;
             margin: 0;
             padding: 0;
+            color: #333;
         }
 
         header {
             background: #0078d7;
-            color: #fff;
+            color: white;
             padding: 1rem;
             text-align: center;
+            font-size: 1.5rem;
         }
 
         section {
             max-width: 900px;
             margin: 2rem auto;
-            background: #fff;
+            background: white;
             padding: 2rem;
             border-radius: 10px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -57,7 +58,7 @@
     </style>
 </head>
 <body>
-    <header><h1>Car Sharing System</h1></header>
+    <header>🚗 Car Sharing System</header>
 
     <section id="login-section">
         <h2>🔑 Logowanie</h2>
@@ -69,84 +70,104 @@
     </section>
 
     <section id="cars-section" style="display:none;">
-        <h2>🚗 Dostępne samochody</h2>
+        <h2>🚘 Dostępne samochody</h2>
         <div id="cars"></div>
     </section>
 
     <script>
-    const apiUrl = "https://localhost:7112/api";
-    let token = "";
+        const apiUrl = "https://localhost:7112/api";
+        let token = ""; // 👈 musi być globalne
 
-    async function register() {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      const name = email.split("@")[0];
-      const res = await fetch(`${apiUrl}/users/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password })
-      });
-      if (res.ok) alert("✅ Zarejestrowano! Teraz się zaloguj.");
-      else alert("❌ Błąd rejestracji.");
-    }
+        async function register() {
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+            const name = email.split("@")[0];
 
-    async function login() {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      const res = await fetch(`${apiUrl}/users/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
-      });
-      if (!res.ok) return alert("❌ Błędne dane logowania.");
+            const res = await fetch(`${apiUrl}/users/register`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, email, password })
+            });
 
-      const data = await res.json();
-      token = data.token;
-      document.getElementById("login-status").textContent = "Zalogowano!";
-      document.getElementById("login-section").style.display = "none";
-      document.getElementById("cars-section").style.display = "block";
-      loadCars();
-    }
+            if (res.ok) alert("✅ Rejestracja zakończona sukcesem. Możesz się zalogować.");
+            else alert("❌ Rejestracja nieudana.");
+        }
 
-    async function loadCars() {
-      const res = await fetch(`${apiUrl}/cars/available`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const cars = await res.json();
-      const list = document.getElementById("cars");
-      list.innerHTML = "";
-      cars.forEach(c => {
-        const div = document.createElement("div");
-        div.className = "car-card";
-        div.innerHTML = `
-          <b>${c.brand} ${c.model}</b><br>
-          Typ: ${c.carType} | Cena: ${c.pricePerDay} zł/dzień<br>
-          <button onclick="reserve('${c.carId}')">Rezerwuj</button>
-        `;
-        list.appendChild(div);
-      });
-    }
+        async function login() {
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
 
-    async function reserve(carId) {
-      const start = new Date();
-      const end = new Date();
-      end.setDate(start.getDate() + 1);
-      const res = await fetch(`${apiUrl}/reservations/create`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          carId,
-          startRental: start.toISOString(),
-          endRental: end.toISOString(),
-          methodOfPayment: "CreditCard"
-        })
-      });
-      if (res.ok) alert("🚘 Rezerwacja utworzona!");
-      else alert("❌ Nie udało się zarezerwować.");
-    }
+            const res = await fetch(`${apiUrl}/users/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password })
+            });
+
+            if (!res.ok) return alert("❌ Błędne dane logowania.");
+
+            const data = await res.json();
+            token = data.token; // 👈 zapis globalny
+
+            console.log("Token:", token);
+
+            document.getElementById("login-status").textContent = "Zalogowano!";
+            document.getElementById("login-section").style.display = "none";
+            document.getElementById("cars-section").style.display = "block";
+
+            loadCars();
+        }
+
+        async function loadCars() {
+            const res = await fetch(`${apiUrl}/cars/available`);
+            const cars = await res.json();
+
+            const list = document.getElementById("cars");
+            list.innerHTML = "";
+
+            cars.forEach(c => {
+                const div = document.createElement("div");
+                div.className = "car-card";
+                div.innerHTML = `
+              <b>${c.brand} ${c.model}</b><br>
+              Typ: ${c.carType} | Cena: ${c.pricePerDay} zł/dzień<br>
+              <button onclick="reserve('${c.carId}')">Rezerwuj</button>
+            `;
+                list.appendChild(div);
+            });
+        }
+
+        async function reserve(carId) {
+            const start = new Date();
+            const end = new Date();
+            end.setDate(start.getDate() + 1);
+
+            console.log("Rezerwacja auta:", carId);
+            console.log("Token podczas rezerwacji:", token);
+
+            const res = await fetch(`${apiUrl}/reservations/create`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    carId,
+                    startRental: start.toISOString(),
+                    endRental: end.toISOString(),
+                    methodOfPayment: "CreditCard"
+                }),
+                credentials: "include"
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                alert(`✅ Rezerwacja utworzona! Numer: ${data.rentalId || "(brak ID w odpowiedzi)"}`);
+            } else if (res.status === 401) {
+                alert("❌ Brak autoryzacji – zaloguj się ponownie.");
+            } else {
+                alert("❌ Nie udało się zarezerwować pojazdu.");
+            }
+        }
     </script>
 </body>
 </html>
