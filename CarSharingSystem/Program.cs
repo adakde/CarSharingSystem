@@ -61,7 +61,11 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:8080")
+        policy.WithOrigins(
+        "https://localhost:5023", // Blazor HTTPS
+        "http://localhost:5023",  // fallback HTTP
+        "https://localhost:5000"  // alternatywny port Blazora, jeśli masz inny
+    )
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();

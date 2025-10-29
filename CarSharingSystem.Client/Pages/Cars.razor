@@ -1,0 +1,65 @@
+﻿@page "/Cars"
+@using CarSharingSystem.Client.Services
+@inject HttpClient Http
+@inject IJSRuntime js
+@inject AuthService Auth
+
+<h3>🚘 Dostępne samochody</h3>
+
+@if (cars == null)
+{
+    <p>Ładowanie...</p>
+}
+else
+{
+    @foreach (var c in cars)
+    {
+        <div class="border p-2 m-2">
+            <b>@c.Brand @c.Model</b> – @c.PricePerDay zł/dzień
+            <button class="btn btn-success btn-sm" @onclick="() => Reserve(c.CarId)">Rezerwuj</button>
+        </div>
+    }
+}
+
+@code {
+    private List<Car>? cars;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var token = await Auth.GetTokenAsync();
+        if (!string.IsNullOrEmpty(token))
+        {
+            Http.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        }
+
+        cars = await Http.GetFromJsonAsync<List<Car>>("cars/available");
+    }
+
+    private async Task Reserve(Guid carId)
+    {
+        var start = DateTime.UtcNow;
+        var end = start.AddDays(1);
+        var dto = new
+        {
+            carId,
+            startRental = start,
+            endRental = end,
+            methodOfPayment = "CreditCard"
+        };
+
+        var res = await Http.PostAsJsonAsync("reservations/create", dto);
+        if (res.IsSuccessStatusCode)
+        {
+            var json = await res.Content.ReadFromJsonAsync<Dictionary<string, object>>();
+            var id = json["rentalId"];
+            await js.InvokeVoidAsync("alert", $"✅ Rezerwacja utworzona! Numer: {id}");
+        }
+        else
+        {
+            await js.InvokeVoidAsync("alert", "❌ Nie udało się zarezerwować.");
+        }
+    }
+
+    record Car(Guid CarId, string Brand, string Model, string CarType, decimal PricePerDay);
+}
