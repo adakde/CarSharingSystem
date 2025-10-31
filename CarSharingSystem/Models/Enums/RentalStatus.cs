@@ -4,6 +4,6 @@
     {
         Active,
         Closed,
-        Canceled
+        Cancelled
     }
 }

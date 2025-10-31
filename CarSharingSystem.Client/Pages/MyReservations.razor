@@ -1,0 +1,72 @@
+﻿@page "/my"
+@using CarSharingSystem.Client.Services
+@using Microsoft.AspNetCore.Authorization
+@inject HttpClient Http
+@inject AuthService Auth
+@inject IJSRuntime js
+
+<h3>📋 Moje rezerwacje</h3>
+
+@if (reservations == null)
+{
+    <p>Ładowanie danych...</p>
+}
+else if (reservations.Count == 0)
+{
+    <div class="alert alert-info mt-3">Nie masz żadnych rezerwacji.</div>
+}
+else
+{
+    <table class="table table-striped mt-3">
+        <thead>
+            <tr>
+                <th>Samochód</th>
+                <th>Okres wynajmu</th>
+                <th>Status</th>
+                <th>Płatność</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in reservations)
+            {
+                <tr>
+                    <td>@r.Car.Brand @r.Car.Model</td>
+                    <td>@r.StartRental.ToLocalTime():dd.MM.yyyy HH:mm - @r.EndRental.ToLocalTime():dd.MM.yyyy HH:mm</td>
+                    <td>@r.Status</td>
+                    <td>@r.MethodOfPayment</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Rental>? reservations;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var token = await Auth.GetTokenAsync();
+
+        if (string.IsNullOrEmpty(token))
+        {
+            await js.InvokeVoidAsync("alert", "Musisz się zalogować, aby zobaczyć rezerwacje!");
+            return;
+        }
+
+        Http.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        try
+        {
+            reservations = await Http.GetFromJsonAsync<List<Rental>>("reservations/my");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Błąd pobierania rezerwacji: " + ex.Message);
+            reservations = new();
+        }
+    }
+
+    record Car(string Brand, string Model);
+    record Rental(Guid RentalId, Car Car, DateTime StartRental, DateTime EndRental, string Status, string MethodOfPayment);
+}

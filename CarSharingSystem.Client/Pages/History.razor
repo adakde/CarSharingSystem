@@ -1,0 +1,119 @@
+﻿@page "/history"
+@using CarSharingSystem.Client.Services
+@inject HttpClient Http
+@inject AuthService Auth
+@inject IJSRuntime js
+
+<h3>📜 Historia rezerwacji</h3>
+
+@if (isLoading)
+{
+    <div class="spinner-border text-primary mt-4" role="status">
+        <span class="visually-hidden">Ładowanie...</span>
+    </div>
+}
+else if (errorMessage != null)
+{
+    <div class="alert alert-danger mt-3">@errorMessage</div>
+}
+else if (history == null || history.Count == 0)
+{
+    <div class="alert alert-info mt-3">Nie masz żadnych zakończonych rezerwacji.</div>
+}
+else
+{
+    <table class="table table-hover mt-3">
+        <thead class="table-dark">
+            <tr>
+                <th>Samochód</th>
+                <th>Okres wynajmu</th>
+                <th>Kwota</th>
+                <th>Płatność</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in history)
+            {
+                <tr>
+                    <td>@r.Car.Brand @r.Car.Model</td>
+                    <td>@r.StartRental.ToLocalTime():dd.MM.yyyy HH:mm - @r.EndRental.ToLocalTime():dd.MM.yyyy HH:mm</td>
+                    <td>@(r.RentalPrice > 0 ? $"{r.RentalPrice:0.00} zł" : "-")</td>
+                    <td>@r.MethodOfPayment</td>
+                    <td>
+                        @if (r.Status == "Closed")
+                        {
+                            <span class="badge bg-success">Zakończona</span>
+                        }
+                        else if (r.Status == "Cancelled")
+                        {
+                            <span class="badge bg-danger">Anulowana</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">@r.Status</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Rental>? history;
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var token = await Auth.GetTokenAsync();
+            if (string.IsNullOrEmpty(token))
+            {
+                errorMessage = "Musisz się zalogować, aby zobaczyć historię.";
+                isLoading = false;
+                return;
+            }
+
+            Http.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            var response = await Http.GetAsync("reservations/history");
+
+            if (response.IsSuccessStatusCode)
+            {
+                history = await response.Content.ReadFromJsonAsync<List<Rental>>();
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                errorMessage = "Sesja wygasła. Zaloguj się ponownie.";
+            }
+            else
+            {
+                errorMessage = $"Błąd podczas pobierania danych: {response.StatusCode}";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Błąd połączenia z API: " + ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    // model danych pasujący do JSON z endpointu /api/reservations/history
+    record Car(string Brand, string Model);
+    record Rental(
+        Guid RentalId,
+        Car Car,
+        DateTime StartRental,
+        DateTime EndRental,
+        string Status,
+        string MethodOfPayment,
+        decimal RentalPrice
+    );
+}

@@ -1,0 +1,14 @@
+﻿@page "/logout"
+@using CarSharingSystem.Client.Services
+@inject AuthService Auth
+@inject NavigationManager Nav
+
+<h3>👋 Wylogowywanie...</h3>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await Auth.LogoutAsync();
+        Nav.NavigateTo("/login", true); 
+    }
+}

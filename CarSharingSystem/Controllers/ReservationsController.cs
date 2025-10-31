@@ -108,5 +108,30 @@ namespace CarSharingSystem.Controllers
 
             return Ok(list);
         }
+        [HttpGet("history")]
+        public async Task<IActionResult> History()
+        {
+            var userId = CurrentUserId();
+
+            var history = await _context.Rentals
+                .Include(r => r.Car)
+                .Where(r => r.UserId == userId &&
+                            (r.Status == RentalStatus.Closed || r.Status == RentalStatus.Cancelled))
+                .OrderByDescending(r => r.EndRental)
+                .Select(r => new
+                {
+                    r.RentalId,
+                    Car = new { r.Car!.Brand, r.Car.Model },
+                    r.StartRental,
+                    r.EndRental,
+                    Status = r.Status.ToString(),
+                    r.RentalPrice,
+                    MethodOfPayment = r.MethodOfPayment.ToString()
+                })
+                .ToListAsync();
+
+            return Ok(history);
+        }
+
     }
 }
