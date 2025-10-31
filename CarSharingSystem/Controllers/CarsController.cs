@@ -2,6 +2,7 @@
 using CarSharingSystem.DTOs;
 using CarSharingSystem.Models.Entities;
 using CarSharingSystem.Models.Enums;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -114,20 +115,38 @@ namespace CarSharingSystem.Controllers
                 return StatusCode(500, "Error updating car");
             }
         }
-        [HttpPost]
-        [Route("AddCar")]
-        public async Task<IActionResult> AddCar([FromBody] Car newCar)
+        [Authorize(Roles = "Admin")]
+        [HttpPost("add")]
+        public async Task<IActionResult> AddCar([FromBody] CarCreateDto dto)
         {
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
-            newCar.CarId = Guid.NewGuid();
 
-            _context.Cars.Add(newCar);
+            var car = new Car
+            {
+                CarId = Guid.NewGuid(),
+                Brand = dto.Brand,
+                Model = dto.Model,
+                CarType = dto.CarType,
+                PricePerDay = dto.PricePerDay,
+                Status = CarStatus.Available
+            };
+
+            _context.Cars.Add(car);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetById), new { id = newCar.CarId }, newCar);
+            return Ok(new { message = "Samochód dodany pomyślnie!" });
+        }
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("{id:guid}")]
+        public async Task<IActionResult> DeleteCar(Guid id)
+        {
+            var car = await _context.Cars.FindAsync(id);
+            if (car == null) return NotFound("Samochód nie istnieje.");
+
+            _context.Cars.Remove(car);
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Samochód usunięty." });
         }
 
         [HttpDelete]

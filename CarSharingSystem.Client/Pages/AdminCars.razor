@@ -1,0 +1,126 @@
+﻿@page "/admin/cars"
+@using CarSharingSystem.Client.Services
+@inject HttpClient Http
+@inject IJSRuntime js
+@inject AuthService Auth
+
+<h3>🚗 Panel administratora — zarządzanie samochodami</h3>
+
+@if (!isAdmin)
+{
+    <div class="alert alert-danger mt-3">
+        Brak uprawnień do wyświetlenia tej strony.
+    </div>
+}
+else
+{
+    <div class="mb-3 mt-3">
+        <input class="form-control mb-2" placeholder="Marka" @bind="newCar.Brand" />
+        <input class="form-control mb-2" placeholder="Model" @bind="newCar.Model" />
+        <input class="form-control mb-2" placeholder="Typ (np. Sedan)" @bind="newCar.CarType" />
+        <input type="number" class="form-control mb-2" placeholder="Cena za dzień" @bind="newCar.PricePerDay" />
+        <button class="btn btn-success" @onclick="AddCar">➕ Dodaj samochód</button>
+    </div>
+
+    <hr />
+
+    @if (cars == null)
+    {
+        <p>Ładowanie...</p>
+    }
+    else if (!cars.Any())
+    {
+        <p>Brak samochodów w bazie.</p>
+    }
+    else
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Marka</th>
+                    <th>Model</th>
+                    <th>Typ</th>
+                    <th>Cena (zł/dzień)</th>
+                    <th>Akcje</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var c in cars)
+                {
+                    <tr>
+                        <td>@c.Brand</td>
+                        <td>@c.Model</td>
+                        <td>@c.CarType</td>
+                        <td>@c.PricePerDay</td>
+                        <td>
+                            <button class="btn btn-danger btn-sm" @onclick="() => DeleteCar(c.CarId)">Usuń</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+@code {
+    private List<Car>? cars;
+    private CarCreate newCar = new();
+    private bool isAdmin;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var token = await Auth.GetTokenAsync();
+        if (!string.IsNullOrEmpty(token))
+        {
+            Http.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        }
+
+        // 🔹 Sprawdzenie roli
+        var jwt = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler().ReadJwtToken(token);
+        var role = jwt.Claims.FirstOrDefault(c => c.Type == "role")?.Value;
+        isAdmin = role == "Admin";
+
+        if (isAdmin)
+        {
+            cars = await Http.GetFromJsonAsync<List<Car>>("cars/getall");
+        }
+    }
+
+    private async Task AddCar()
+    {
+        var res = await Http.PostAsJsonAsync("cars/add", newCar);
+        if (res.IsSuccessStatusCode)
+        {
+            await js.InvokeVoidAsync("alert", "✅ Samochód dodany!");
+            cars = await Http.GetFromJsonAsync<List<Car>>("cars/getall");
+        }
+        else
+        {
+            await js.InvokeVoidAsync("alert", "❌ Błąd podczas dodawania samochodu.");
+        }
+    }
+
+    private async Task DeleteCar(Guid id)
+    {
+        var res = await Http.DeleteAsync($"cars/{id}");
+        if (res.IsSuccessStatusCode)
+        {
+            await js.InvokeVoidAsync("alert", "🚗 Samochód usunięty!");
+            cars = await Http.GetFromJsonAsync<List<Car>>("cars/getall");
+        }
+        else
+        {
+            await js.InvokeVoidAsync("alert", "❌ Nie udało się usunąć samochodu.");
+        }
+    }
+
+    record Car(Guid CarId, string Brand, string Model, string CarType, decimal PricePerDay);
+    class CarCreate
+    {
+        public string Brand { get; set; } = string.Empty;
+        public string Model { get; set; } = string.Empty;
+        public string CarType { get; set; } = string.Empty;
+        public decimal PricePerDay { get; set; }
+    }
+}
