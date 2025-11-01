@@ -1,0 +1,94 @@
+﻿@page "/admin/users"
+@using CarSharingSystem.Client.Models
+@using Microsoft.AspNetCore.Authorization
+@inject HttpClient Http
+@inject IJSRuntime js
+@inject CarSharingSystem.Client.Services.AuthService Auth
+@attribute [Authorize(Roles = "Admin")]
+
+<h3>👤 Zarządzanie użytkownikami</h3>
+
+@if (users == null)
+{
+    <p>Ładowanie...</p>
+}
+else if (!users.Any())
+{
+    <p>Brak zarejestrowanych użytkowników.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Imię</th>
+                <th>Email</th>
+                <th>Rola</th>
+                <th>Akcje</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var u in users)
+            {
+                <tr>
+                    <td>@u.Name</td>
+                    <td>@u.Email</td>
+                    <td>
+                        <select class="form-select form-select-sm" @onchange="(e) => ChangeRole(u.UserId, e.Value?.ToString())">
+                            @foreach (var role in Enum.GetNames<UserRole>())
+                            {
+                                <option value="@role" selected="@(u.Role == role)">@role</option>
+                            }
+                        </select>
+                    </td>
+                    <td>
+                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteUser(u.UserId)">Usuń</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<UserDto>? users;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var token = await Auth.GetTokenAsync();
+        if (!string.IsNullOrEmpty(token))
+            Http.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        users = await Http.GetFromJsonAsync<List<UserDto>>("Users/all");
+    }
+
+    private async Task ChangeRole(Guid id, string? newRole)
+    {
+        if (string.IsNullOrEmpty(newRole)) return;
+        var res = await Http.PutAsJsonAsync($"users/{id}/role", newRole);
+        if (res.IsSuccessStatusCode)
+            await js.InvokeVoidAsync("alert", "✅ Rola zmieniona!");
+        else
+            await js.InvokeVoidAsync("alert", "❌ Błąd zmiany roli.");
+    }
+
+    private async Task DeleteUser(Guid id)
+    {
+        var confirmed = await js.InvokeAsync<bool>("confirm", "Czy na pewno chcesz usunąć tego użytkownika?");
+        if (!confirmed) return;
+
+        var res = await Http.DeleteAsync($"users/{id}");
+        if (res.IsSuccessStatusCode)
+        {
+            users = users!.Where(u => u.UserId != id).ToList();
+            await js.InvokeVoidAsync("alert", "🗑️ Użytkownik usunięty!");
+        }
+        else
+        {
+            await js.InvokeVoidAsync("alert", "❌ Nie udało się usunąć użytkownika.");
+        }
+    }
+
+    record UserDto(Guid UserId, string Name, string Email, string Role);
+}

@@ -75,5 +75,56 @@ namespace CarSharingSystem.Controllers
 
             return Ok(new { user.UserId, user.Email, user.Name, user.Role });
         }
+        // === ADMIN: POBIERZ WSZYSTKICH UŻYTKOWNIKÓW ===
+        [HttpGet("all")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAllUsers()
+        {
+            var users = await _context.Users
+                .Select(u => new
+                {
+                    u.UserId,
+                    u.Name,
+                    u.Email,
+                    u.Role
+                })
+                .ToListAsync();
+
+            return Ok(users);
+        }
+
+        // === ADMIN: ZMIEŃ ROLĘ UŻYTKOWNIKA ===
+        [HttpPut("{id:guid}/role")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ChangeRole(Guid id, [FromBody] string newRole)
+        {
+            if (!Enum.TryParse<UserRole>(newRole, out var role))
+                return BadRequest("Invalid role");
+
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
+                return NotFound("User not found");
+
+            user.Role = role;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = $"Role changed to {newRole}" });
+        }
+
+        // === ADMIN: USUŃ UŻYTKOWNIKA ===
+        [HttpDelete("{id:guid}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteUser(Guid id)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
+                return NotFound("User not found");
+
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "User deleted" });
+        }
+
     }
 }

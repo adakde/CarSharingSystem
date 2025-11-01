@@ -19,9 +19,6 @@ else if (cars.Any())
         <div class="border p-3 m-2 rounded shadow-sm">
             <b>@c.Brand @c.Model</b> – <span>@c.PricePerDay zł/dzień</span>
 
-            <button class="btn btn-success btn-sm ms-3" @onclick="() => Reserve(c.CarId)">
-                Rezerwuj
-            </button>
             <button class="btn btn-outline-info btn-sm ms-1"
                     @onclick="@(() => GoToDetails(c.CarId))">
                 🔍 Szczegóły
@@ -51,37 +48,12 @@ else
 
         try
         {
-            cars = await Http.GetFromJsonAsync<List<Car>>("cars/available");
+            cars = await Http.GetFromJsonAsync<List<Car>>("cars/getall");
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Błąd przy pobieraniu samochodów: {ex.Message}");
             cars = new();
-        }
-    }
-
-    private async Task Reserve(Guid carId)
-    {
-        var start = DateTime.UtcNow;
-        var end = start.AddDays(1);
-        var dto = new
-        {
-            carId,
-            startRental = start,
-            endRental = end,
-            methodOfPayment = "CreditCard"
-        };
-
-        var res = await Http.PostAsJsonAsync("reservations/create", dto);
-        if (res.IsSuccessStatusCode)
-        {
-            var json = await res.Content.ReadFromJsonAsync<Dictionary<string, object>>();
-            var id = json["rentalId"];
-            await js.InvokeVoidAsync("alert", $"✅ Rezerwacja utworzona! Numer: {id}");
-        }
-        else
-        {
-            await js.InvokeVoidAsync("alert", "❌ Nie udało się zarezerwować.");
         }
     }
 
