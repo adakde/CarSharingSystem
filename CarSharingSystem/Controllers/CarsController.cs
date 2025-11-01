@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CarSharingSystem.Controllers
 {
-    [Route("Api/[controller]")]
+    [Route("api/[controller]")]
     [ApiController]
     public class CarsController : Controller
     {
@@ -62,6 +62,7 @@ namespace CarSharingSystem.Controllers
         }
         [HttpGet]
         [Route("Available")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetAvailableCars()
         {
             var cars = await _context.Cars.Where(c => c.Status == CarStatus.Available).ToListAsync();
@@ -83,19 +84,19 @@ namespace CarSharingSystem.Controllers
             }
             return Ok(car);
         }
-        [HttpPut]
-        [Route("UpdateById")]
-        public async Task<IActionResult> UpdateById(Guid id, [FromBody] CarUpdateDto model)
+        [Authorize(Roles = "Admin")]
+        [HttpPut("update/{id:guid}")]
+        public async Task<IActionResult> UpdateCar(Guid id, [FromBody] CarUpdateDto model)
         {
             var car = await _context.Cars.FindAsync(id);
             if (car == null)
-            {
                 return NotFound("Car not found");
-            }
 
-            // Update only provided fields
-            if (model.Brand != null) car.Brand = model.Brand;
-            if (model.Model != null) car.Model = model.Model;
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            if (!string.IsNullOrEmpty(model.Brand)) car.Brand = model.Brand;
+            if (!string.IsNullOrEmpty(model.Model)) car.Model = model.Model;
             if (model.YearOfProduction.HasValue) car.YearOfProduction = model.YearOfProduction.Value;
             if (model.CarType.HasValue) car.CarType = model.CarType.Value;
             if (model.Battery.HasValue) car.Battery = (decimal)model.Battery.Value;
@@ -103,33 +104,36 @@ namespace CarSharingSystem.Controllers
             if (model.LoadingTime.HasValue) car.LoadingTime = model.LoadingTime.Value;
             if (model.Status.HasValue) car.Status = model.Status.Value;
             if (model.PricePerDay.HasValue) car.PricePerDay = model.PricePerDay.Value;
-            if (model.Location != null) car.Location = model.Location;
+            if (!string.IsNullOrEmpty(model.Location)) car.Location = model.Location;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-                return Ok(car);
-            }
-            catch (DbUpdateException ex)
-            {
-                return StatusCode(500, "Error updating car");
-            }
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "✅ Car updated successfully!" });
         }
         [Authorize(Roles = "Admin")]
         [HttpPost("add")]
         public async Task<IActionResult> AddCar([FromBody] CarCreateDto dto)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            {
+                var errors = string.Join("; ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
+                return BadRequest($"Niepoprawne dane: {errors}");
+            }
 
             var car = new Car
             {
                 CarId = Guid.NewGuid(),
                 Brand = dto.Brand,
                 Model = dto.Model,
+                YearOfProduction = dto.YearOfProduction,
                 CarType = dto.CarType,
+                Battery = (decimal?)dto.Battery ?? 0,
+                Range = dto.Range ?? 0,
+                LoadingTime = dto.LoadingTime ?? 0,
+                Status = dto.Status,
                 PricePerDay = dto.PricePerDay,
-                Status = CarStatus.Available
+                Location = dto.Location
             };
 
             _context.Cars.Add(car);

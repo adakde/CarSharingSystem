@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
 
@@ -39,7 +41,9 @@ builder.Services
             ValidateIssuerSigningKey = true,
             ValidIssuer = jwtSection["Issuer"],
             ValidAudience = jwtSection["Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(key)
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+            RoleClaimType = ClaimTypes.Role,
+            NameClaimType = JwtRegisteredClaimNames.Email
         };
 
         options.Events = new JwtBearerEvents

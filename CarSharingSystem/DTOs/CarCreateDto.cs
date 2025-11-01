@@ -1,5 +1,6 @@
 ﻿using CarSharingSystem.Models.Enums;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace CarSharingSystem.DTOs
 {
@@ -7,16 +8,17 @@ namespace CarSharingSystem.DTOs
     {
         [Required(ErrorMessage = "Brand is required")]
         [StringLength(50, MinimumLength = 2)]
-        public string? Brand { get; set; }
+        public string Brand { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Model is required")]
         [StringLength(50, MinimumLength = 1)]
-        public string? Model { get; set; }
+        public string Model { get; set; } = string.Empty;
 
         [Range(1900, 2100, ErrorMessage = "Invalid year")]
-        public int YearOfProduction { get; set; }
+        public int YearOfProduction { get; set; } = DateTime.Now.Year;
 
         [Required]
+        [JsonConverter(typeof(JsonStringEnumConverter))]
         public CarType CarType { get; set; }
 
         [Range(0, 100, ErrorMessage = "Battery must be between 0 and 100")]
@@ -29,12 +31,13 @@ namespace CarSharingSystem.DTOs
         public double? LoadingTime { get; set; }
 
         [Required]
-        public CarStatus Status { get; set; }
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public CarStatus Status { get; set; } = CarStatus.Available;
 
         [Range(0.01, 10000, ErrorMessage = "Invalid price")]
         public decimal PricePerDay { get; set; }
 
         [Required]
-        public string? Location { get; set; }
+        public string Location { get; set; } = string.Empty;
     }
 }

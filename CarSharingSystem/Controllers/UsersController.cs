@@ -58,7 +58,7 @@ namespace CarSharingSystem.Controllers
             var ok = BCrypt.Net.BCrypt.Verify(dto.Password, user.Password);
             if (!ok) return Unauthorized("Invalid credentials");
 
-            var token = _tokenService.GenerateToken(user.UserId, user.Email, user.Role.ToString());
+            var token = _tokenService.GenerateToken(user.UserId, user.Email, user.Role);
             return Ok(new { token });
         }
 

@@ -4,9 +4,51 @@
 <div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
     <nav class="nav flex-column">
 
-        @if (isLoggedIn && (isUser) )
+        @if (!isLoggedIn)
         {
-            <!-- Widoczne dla zalogowanych -->
+            <!-- 🔸 Niezalogowany -->
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="/cars" Match="NavLinkMatch.All">
+                    <span class="bi bi-car-front"></span> Samochody
+                </NavLink>
+            </div>
+
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">
+                    <span class="bi bi-person"></span> Logowanie
+                </NavLink>
+            </div>
+
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="/register" Match="NavLinkMatch.All">
+                    <span class="bi bi-person-plus"></span> Rejestracja
+                </NavLink>
+            </div>
+        }
+        else if (isAdmin || isWorker)
+        {
+            <!-- 🔸 Admin / Worker -->
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="/cars" Match="NavLinkMatch.All">
+                    <span class="bi bi-car-front"></span> Samochody
+                </NavLink>
+            </div>
+
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="/admin/cars" Match="NavLinkMatch.All">
+                    <span class="bi bi-wrench-adjustable-circle"></span> Zarządzanie flotą
+                </NavLink>
+            </div>
+
+            <div class="nav-item px-3">
+                <NavLink class="nav-link text-danger" href="/logout" Match="NavLinkMatch.All">
+                    <span class="bi bi-box-arrow-right"></span> Wyloguj
+                </NavLink>
+            </div>
+        }
+        else if (isUser)
+        {
+            <!-- 🔸 Zwykły użytkownik -->
             <div class="nav-item px-3">
                 <NavLink class="nav-link" href="/cars" Match="NavLinkMatch.All">
                     <span class="bi bi-car-front"></span> Samochody
@@ -32,47 +74,6 @@
             </div>
         }
 
-        @if((!isLoggedIn))
-        {
-            <!-- Widoczne dla niezalogowanych -->
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="/cars" Match="NavLinkMatch.All">
-                    <span class="bi bi-car-front"></span> Samochody
-                </NavLink>
-            </div>
-
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">
-                    <span class="bi bi-person"></span> Logowanie
-                </NavLink>
-            </div>
-
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="/register" Match="NavLinkMatch.All">
-                    <span class="bi bi-person-plus"></span> Rejestracja
-                </NavLink>
-            </div>
-        }
-        @if (isLoggedIn && isAdmin || isWorker)
-        {
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="/cars" Match="NavLinkMatch.All">
-                    <span class="bi bi-car-front"></span> Samochody
-                </NavLink>
-            </div>
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="/admin/cars" Match="NavLinkMatch.All">
-                    <span class="bi bi-wrench-adjustable-circle"></span> Zarządzanie flotą
-                </NavLink>
-            </div>
-            <div class="nav-item px-3">
-                <NavLink class="nav-link text-danger" href="/logout" Match="NavLinkMatch.All">
-                    <span class="bi bi-box-arrow-right"></span> Wyloguj
-                </NavLink>
-            </div>
-        }
-
-
     </nav>
 </div>
 
@@ -82,24 +83,19 @@
     private bool isWorker;
     private bool isUser;
     private bool collapseNavMenu = true;
-
+    private bool isAuthorized => isAdmin;
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
 
-    private void ToggleNavMenu()
-    {
-        collapseNavMenu = !collapseNavMenu;
-    }
+    private void ToggleNavMenu() => collapseNavMenu = !collapseNavMenu;
 
     protected override async Task OnInitializedAsync()
     {
-        // 🔹 Ustaw stan przy starcie
         await UpdateLoginStateAsync();
 
-        // 🔹 Subskrybuj zmiany stanu autoryzacji
         AuthStateProvider.AuthenticationStateChanged += async _ =>
         {
             await UpdateLoginStateAsync();
-            StateHasChanged(); // wymusza przerysowanie
+            InvokeAsync(StateHasChanged);
         };
     }
 
@@ -112,6 +108,7 @@
         isAdmin = user.IsInRole("Admin");
         isWorker = user.IsInRole("Worker");
         isUser = user.IsInRole("User");
+
+        Console.WriteLine($"[NavMenu] isLoggedIn={isLoggedIn}, isAdmin={isAdmin}, isWorker={isWorker}, isUser={isUser}");
     }
 }
-

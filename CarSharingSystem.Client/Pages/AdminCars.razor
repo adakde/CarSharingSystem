@@ -1,10 +1,13 @@
 ﻿@page "/admin/cars"
+@using CarSharingSystem.Client.Models
 @using CarSharingSystem.Client.Services
+@using Microsoft.AspNetCore.Authorization
 @inject HttpClient Http
 @inject IJSRuntime js
 @inject AuthService Auth
+@attribute [Authorize(Roles = "Admin")]
 
-<h3>🚗 Panel administratora — zarządzanie samochodami</h3>
+<h3>🚗 Panel administratora - zarządzanie samochodami</h3>
 
 @if (!isAdmin)
 {
@@ -14,13 +17,39 @@
 }
 else
 {
-    <div class="mb-3 mt-3">
-        <input class="form-control mb-2" placeholder="Marka" @bind="newCar.Brand" />
-        <input class="form-control mb-2" placeholder="Model" @bind="newCar.Model" />
-        <input class="form-control mb-2" placeholder="Typ (np. Sedan)" @bind="newCar.CarType" />
-        <input type="number" class="form-control mb-2" placeholder="Cena za dzień" @bind="newCar.PricePerDay" />
-        <button class="btn btn-success" @onclick="AddCar">➕ Dodaj samochód</button>
-    </div>
+    <EditForm Model="@newCar" OnValidSubmit="AddCar">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3 mt-3">
+            <input class="form-control mb-2" placeholder="Marka" @bind="newCar.Brand" />
+            <input class="form-control mb-2" placeholder="Model" @bind="newCar.Model" />
+            <input type="number" class="form-control mb-2" placeholder="Rok produkcji" @bind="newCar.YearOfProduction" />
+
+            <select class="form-control mb-2" @bind="newCar.CarType">
+                @foreach (var type in Enum.GetValues<CarType>())
+                {
+                    <option value="@type">@type</option>
+                }
+            </select>
+
+            <input type="number" class="form-control mb-2" placeholder="Bateria (%)" @bind="newCar.Battery" />
+            <input type="number" class="form-control mb-2" placeholder="Zasięg (km)" @bind="newCar.Range" />
+            <input type="number" class="form-control mb-2" placeholder="Czas ładowania (h)" @bind="newCar.LoadingTime" />
+
+            <select class="form-control mb-2" @bind="newCar.Status">
+                @foreach (var status in Enum.GetValues<CarStatus>())
+                {
+                    <option value="@status">@status</option>
+                }
+            </select>
+
+            <input type="number" class="form-control mb-2" placeholder="Cena (zł/dzień)" @bind="newCar.PricePerDay" />
+            <input class="form-control mb-2" placeholder="Lokalizacja" @bind="newCar.Location" />
+
+            <button class="btn btn-success">➕ Dodaj samochód</button>
+        </div>
+    </EditForm>
 
     <hr />
 
@@ -41,6 +70,7 @@ else
                     <th>Model</th>
                     <th>Typ</th>
                     <th>Cena (zł/dzień)</th>
+                    <th>Status</th>
                     <th>Akcje</th>
                 </tr>
             </thead>
@@ -52,13 +82,68 @@ else
                         <td>@c.Model</td>
                         <td>@c.CarType</td>
                         <td>@c.PricePerDay</td>
+                        <td>@c.Status</td>
                         <td>
+                            <button class="btn btn-primary btn-sm me-1" @onclick="() => OpenEditModal(c)">Edytuj</button>
                             <button class="btn btn-danger btn-sm" @onclick="() => DeleteCar(c.CarId)">Usuń</button>
                         </td>
                     </tr>
                 }
             </tbody>
         </table>
+        @if (showEditModal && editCar != null)
+        {
+            <div class="modal show d-block" style="background: rgba(0,0,0,0.5);">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">✏️ Edycja samochodu</h5>
+                            <button class="btn-close" @onclick="CloseEditModal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <EditForm Model="editCar" OnValidSubmit="SaveEdit">
+                                <DataAnnotationsValidator />
+                                <ValidationSummary />
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <input class="form-control mb-2" @bind="editCar.Brand" placeholder="Marka" />
+                                        <input class="form-control mb-2" @bind="editCar.Model" placeholder="Model" />
+                                        <input type="number" class="form-control mb-2" @bind="editCar.YearOfProduction" placeholder="Rok produkcji" />
+                                        <input type="number" class="form-control mb-2" @bind="editCar.PricePerDay" placeholder="Cena (zł/dzień)" />
+                                        <input class="form-control mb-2" @bind="editCar.Location" placeholder="Lokalizacja" />
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <input type="number" class="form-control mb-2" @bind="editCar.Battery" placeholder="Stan baterii (%)" />
+                                        <input type="number" class="form-control mb-2" @bind="editCar.Range" placeholder="Zasięg (km)" />
+                                        <input type="number" class="form-control mb-2" @bind="editCar.LoadingTime" placeholder="Czas ładowania (h)" />
+
+                                        <select class="form-control mb-2" @bind="editCar.CarType">
+                                            @foreach (var type in Enum.GetValues<CarType>())
+                                            {
+                                                <option value="@type">@type</option>
+                                            }
+                                        </select>
+
+                                        <select class="form-control mb-2" @bind="editCar.Status">
+                                            @foreach (var status in Enum.GetValues<CarStatus>())
+                                            {
+                                                <option value="@status">@status</option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <button class="btn btn-success">💾 Zapisz zmiany</button>
+                                <button type="button" class="btn btn-secondary ms-2" @onclick="CloseEditModal">Anuluj</button>
+                            </EditForm>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
     }
 }
 
@@ -66,24 +151,40 @@ else
     private List<Car>? cars;
     private CarCreate newCar = new();
     private bool isAdmin;
+    private CarEdit? editCar;
+    private bool showEditModal = false;
 
     protected override async Task OnInitializedAsync()
     {
         var token = await Auth.GetTokenAsync();
-        if (!string.IsNullOrEmpty(token))
-        {
-            Http.DefaultRequestHeaders.Authorization =
-                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-        }
+        if (string.IsNullOrEmpty(token))
+            return;
 
-        // 🔹 Sprawdzenie roli
+        Http.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        // 🔹 poprawne odczytanie roli z tokena
         var jwt = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler().ReadJwtToken(token);
-        var role = jwt.Claims.FirstOrDefault(c => c.Type == "role")?.Value;
-        isAdmin = role == "Admin";
+
+        var role = jwt.Claims.FirstOrDefault(c =>
+            c.Type == "role" ||
+            c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+        )?.Value;
+
+        Console.WriteLine($"[AdminCars] Token role: {role}");
+
+        isAdmin = role?.Equals("Admin", StringComparison.OrdinalIgnoreCase) ?? false;
 
         if (isAdmin)
         {
-            cars = await Http.GetFromJsonAsync<List<Car>>("cars/getall");
+            try
+            {
+                cars = await Http.GetFromJsonAsync<List<Car>>("cars/getall");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AdminCars] Błąd przy ładowaniu aut: {ex.Message}");
+            }
         }
     }
 
@@ -94,10 +195,12 @@ else
         {
             await js.InvokeVoidAsync("alert", "✅ Samochód dodany!");
             cars = await Http.GetFromJsonAsync<List<Car>>("cars/getall");
+            newCar = new CarCreate(); // wyczyść formularz
         }
         else
         {
-            await js.InvokeVoidAsync("alert", "❌ Błąd podczas dodawania samochodu.");
+            var error = await res.Content.ReadAsStringAsync();
+            await js.InvokeVoidAsync("alert", $"❌ Błąd podczas dodawania samochodu: {error}");
         }
     }
 
@@ -115,12 +218,63 @@ else
         }
     }
 
-    record Car(Guid CarId, string Brand, string Model, string CarType, decimal PricePerDay);
-    class CarCreate
+    record Car(Guid CarId, string Brand, string Model, string CarType, decimal PricePerDay, string Status);
+
+    private void OpenEditModal(Car car)
     {
+        editCar = new CarEdit
+        {
+            CarId = car.CarId,
+            Brand = car.Brand,
+            Model = car.Model,
+            YearOfProduction = DateTime.Now.Year,
+            CarType = Enum.TryParse<CarType>(car.CarType, out var type) ? type : CarType.Sedan,
+            PricePerDay = car.PricePerDay,
+            Status = Enum.TryParse<CarStatus>(car.Status, out var stat) ? stat : CarStatus.Available,
+            Battery = 100,
+            Range = 500,
+            LoadingTime = 2.5,
+            Location = "Warszawa"
+        };
+        showEditModal = true;
+    }
+
+    private void CloseEditModal()
+    {
+        showEditModal = false;
+        editCar = null;
+    }
+
+    private async Task SaveEdit()
+    {
+        if (editCar == null) return;
+
+        var res = await Http.PutAsJsonAsync($"cars/update/{editCar.CarId}", editCar);
+        if (res.IsSuccessStatusCode)
+        {
+            await js.InvokeVoidAsync("alert", "✅ Zaktualizowano samochód!");
+            cars = await Http.GetFromJsonAsync<List<Car>>("cars/getall");
+            CloseEditModal();
+        }
+        else
+        {
+            var err = await res.Content.ReadAsStringAsync();
+            await js.InvokeVoidAsync("alert", $"❌ Błąd przy zapisie: {err}");
+        }
+    }
+
+    class CarEdit
+    {
+        public Guid CarId { get; set; }
         public string Brand { get; set; } = string.Empty;
         public string Model { get; set; } = string.Empty;
-        public string CarType { get; set; } = string.Empty;
+        public int YearOfProduction { get; set; }
+        public CarType CarType { get; set; }
+        public double? Battery { get; set; }
+        public int? Range { get; set; }
+        public double? LoadingTime { get; set; }
+        public CarStatus Status { get; set; } = CarStatus.Available;
         public decimal PricePerDay { get; set; }
+        public string Location { get; set; } = string.Empty;
     }
 }
