@@ -39,5 +39,8 @@ namespace CarSharingSystem.DTOs
 
         [Required]
         public string Location { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public string? ImageUrl { get; set; }
+
     }
 }

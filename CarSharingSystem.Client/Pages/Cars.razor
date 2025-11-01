@@ -3,73 +3,60 @@
 @inject HttpClient Http
 @inject IJSRuntime js
 @inject AuthService Auth
+@inject NavigationManager Nav
+
 
 <h3>🚘 Dostępne samochody</h3>
 
-@if (isLoading)
+@if (cars == null)
 {
-    <p>⏳ Ładowanie danych...</p>
+    <p>Ładowanie...</p>
 }
-else if (!string.IsNullOrEmpty(message))
-{
-    <div class="alert alert-warning mt-3">@message</div>
-}
-else if (cars != null && cars.Any())
+else if (cars.Any())
 {
     @foreach (var c in cars)
     {
         <div class="border p-3 m-2 rounded shadow-sm">
             <b>@c.Brand @c.Model</b> – <span>@c.PricePerDay zł/dzień</span>
-            <button class="btn btn-success btn-sm ms-3" @onclick="() => Reserve(c.CarId)">Rezerwuj</button>
+
+            <button class="btn btn-success btn-sm ms-3" @onclick="() => Reserve(c.CarId)">
+                Rezerwuj
+            </button>
+            <button class="btn btn-outline-info btn-sm ms-1"
+                    @onclick="@(() => GoToDetails(c.CarId))">
+                🔍 Szczegóły
+            </button>
+
         </div>
     }
 }
 else
 {
-    <p>🚗 Brak dostępnych samochodów.</p>
+    <p>Brak dostępnych samochodów.</p>
 }
 
+
 @code {
+    private void GoToDetails(Guid id) => Nav.NavigateTo($"/car/{id}");
     private List<Car>? cars;
-    private string? message;
-    private bool isLoading = true;
 
     protected override async Task OnInitializedAsync()
     {
+        var token = await Auth.GetTokenAsync();
+        if (!string.IsNullOrEmpty(token))
+        {
+            Http.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        }
+
         try
         {
-            var token = await Auth.GetTokenAsync();
-            if (!string.IsNullOrEmpty(token))
-            {
-                Http.DefaultRequestHeaders.Authorization =
-                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-            }
-
             cars = await Http.GetFromJsonAsync<List<Car>>("cars/available");
-
-            if (cars == null || cars.Count == 0 )
-            {
-                message = "Brak dostępnych samochodów.";
-            }
-        }
-        catch (HttpRequestException ex)
-        {
-            if (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
-            {
-                message = "Nie znaleziono danych o samochodach (404).";
-            }
-            else
-            {
-                message = $"Błąd serwera: {ex.Message}";
-            }
         }
         catch (Exception ex)
         {
-            message = $"Nieoczekiwany błąd: {ex.Message}";
-        }
-        finally
-        {
-            isLoading = false;
+            Console.WriteLine($"Błąd przy pobieraniu samochodów: {ex.Message}");
+            cars = new();
         }
     }
 
@@ -85,24 +72,16 @@ else
             methodOfPayment = "CreditCard"
         };
 
-        try
+        var res = await Http.PostAsJsonAsync("reservations/create", dto);
+        if (res.IsSuccessStatusCode)
         {
-            var res = await Http.PostAsJsonAsync("reservations/create", dto);
-
-            if (res.IsSuccessStatusCode)
-            {
-                var json = await res.Content.ReadFromJsonAsync<Dictionary<string, object>>();
-                var id = json?["rentalId"];
-                await js.InvokeVoidAsync("alert", $"✅ Rezerwacja utworzona! Numer: {id}");
-            }
-            else
-            {
-                await js.InvokeVoidAsync("alert", $"❌ Nie udało się zarezerwować (błąd {res.StatusCode}).");
-            }
+            var json = await res.Content.ReadFromJsonAsync<Dictionary<string, object>>();
+            var id = json["rentalId"];
+            await js.InvokeVoidAsync("alert", $"✅ Rezerwacja utworzona! Numer: {id}");
         }
-        catch (Exception ex)
+        else
         {
-            await js.InvokeVoidAsync("alert", $"❌ Błąd połączenia z API: {ex.Message}");
+            await js.InvokeVoidAsync("alert", "❌ Nie udało się zarezerwować.");
         }
     }
 

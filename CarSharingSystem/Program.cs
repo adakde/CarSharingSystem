@@ -2,6 +2,7 @@
 using CarSharingSystem.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using System.IdentityModel.Tokens.Jwt;
@@ -23,7 +24,12 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 
 // === Baza danych ===
 builder.Services.AddDbContext<CarSharingContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("Database")));
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("Database"));
+    options.ConfigureWarnings(warnings =>
+        warnings.Ignore(RelationalEventId.PendingModelChangesWarning)); 
+});
+
 
 // === JWT ===
 var jwtSection = builder.Configuration.GetSection("Jwt"); // 👈 ważne: z dużej litery "Jwt"
@@ -90,7 +96,7 @@ if (app.Environment.IsDevelopment())
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<CarSharingContext>();
-    context.Database.EnsureCreated();
+    context.Database.Migrate(); 
 }
 
 // === Middleware kolejność ===

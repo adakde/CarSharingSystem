@@ -28,15 +28,15 @@ namespace CarSharingSystem.Data
                 {
                     UserId = adminId,
                     Email = "admin@example.com",
-                    Password = BCrypt.Net.BCrypt.HashPassword("Admin123!"),
+                    Password = "$2a$11$qvLZVxw81c5h6YzA5P4JtuB4AgjOmFKWk96Kk4y7xZ0zH3vILsb.q",
                     Name = "Admin",
                     Role = UserRole.Admin
                 },
                 new User
                 {
                     UserId = userId,
-                    Email = "user1@example.com",
-                    Password = BCrypt.Net.BCrypt.HashPassword("User123!"),
+                    Email = "user1@2example.com",
+                    Password = "$2a$11$Z8iXshfUZ8Yv1q1O7q4aDeP67AWhEbkGcZzZbLwYxI6w4bA3qneU6",
                     Name = "Jan Kowalski",
                     Role = UserRole.User
                 }
@@ -57,7 +57,9 @@ namespace CarSharingSystem.Data
                     CarType = CarType.Sedan,
                     Status = CarStatus.Available,
                     PricePerDay = 300,
-                    Battery = 100.00m
+                    Battery = 100.00m,
+                    Description = "",
+                    ImageUrl = ""
                 },
                 new Car
                 {
@@ -70,7 +72,9 @@ namespace CarSharingSystem.Data
                     CarType = CarType.Hatchback,
                     Status = CarStatus.Available,
                     PricePerDay = 200,
-                    Battery = 85.50m
+                    Battery = 85.50m,
+                    Description = "Seed car Tesla Model 3",
+                    ImageUrl = ""
                 }
             );
 

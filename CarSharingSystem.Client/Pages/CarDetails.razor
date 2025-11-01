@@ -1,0 +1,187 @@
+﻿@page "/car/{id:guid}"
+@inject HttpClient Http
+@inject NavigationManager Nav
+@inject IJSRuntime js
+@inject CarSharingSystem.Client.Services.AuthService Auth
+
+<h3>🚘 Szczegóły samochodu</h3>
+
+@if (car == null)
+{
+    <p>Ładowanie...</p>
+}
+else
+{
+    <div class="card shadow-lg p-4 mt-3">
+        <div class="row">
+            <div class="col-md-6">
+                <img src="@car.ImageUrl" alt="@car.Model" class="img-fluid rounded" />
+            </div>
+            <div class="col-md-6">
+                <h4>@car.Brand @car.Model</h4>
+                <p><b>Typ:</b> @car.CarType</p>
+                <p><b>Rok produkcji:</b> @car.YearOfProduction</p>
+                <p><b>Zasięg:</b> @car.Range km</p>
+                <p><b>Bateria:</b> @car.Battery%</p>
+                <p><b>Czas ładowania:</b> @car.LoadingTime h</p>
+                <p><b>Status:</b> @car.Status</p>
+                <p><b>Cena:</b> @car.PricePerDay zł / dzień</p>
+                <p><b>Lokalizacja:</b> @car.Location</p>
+                <p>@car.Description</p>
+
+                <button class="btn btn-outline-primary" @onclick="Back">⬅️ Powrót</button>
+                <button class="btn btn-success btn-sm ms-3" @onclick="ShowReservationModal">
+                    Rezerwuj
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal z kalendarzem (czysty Bootstrap + Flatpickr) -->
+@if (showModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.4)">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content p-4">
+                <div class="modal-header">
+                    <h5 class="modal-title">📅 Wybierz daty rezerwacji</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label">Zakres dat</label>
+                    <input id="dateRange" class="form-control" placeholder="Wybierz zakres dat" />
+                    <small class="text-muted">Kliknij datę początkową i końcową.</small>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="CloseModal">Anuluj</button>
+                    <button class="btn btn-success" @onclick="ConfirmReservation">Potwierdź</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@if (!string.IsNullOrEmpty(alertMessage))
+{
+    <div class="toast-container position-fixed top-0 end-0 p-3">
+        <div class="toast show bg-danger text-white">
+            <div class="toast-body">@alertMessage</div>
+        </div>
+    </div>
+}
+
+@code {
+    private Car? car;
+    private bool showModal = false;
+    private string? alertMessage;
+    [Parameter] public Guid id { get; set; }
+
+    private async Task ShowAlert(string message)
+    {
+        alertMessage = message;
+        StateHasChanged();
+        await Task.Delay(4000);
+        alertMessage = null;
+        StateHasChanged();
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        car = await Http.GetFromJsonAsync<Car>($"cars/getbyid?id={id}");
+
+        if (car == null || car.CarId == Guid.Empty)
+        {
+            car = new Car(id, "Brak danych", "Brak", "Brak", 0, 0, 0, 0, 0, "Brak", "Brak", "", "");
+        }
+    }
+
+    void Back() => Nav.NavigateTo("/cars");
+
+    async Task ShowReservationModal()
+    {
+        showModal = true;
+        StateHasChanged();
+        await Task.Delay(100);
+
+        // pobierz listę zajętych terminów z API
+        var busyDates = await Http.GetFromJsonAsync<List<DateRangeDto>>($"reservations/busy/{car!.CarId}");
+
+        await js.InvokeVoidAsync("booking.initRange", "#dateRange", new { disable = busyDates });
+    }
+    record DateRangeDto(DateTime from, DateTime to);
+
+    void CloseModal() => showModal = false;
+
+    async Task ConfirmReservation()
+    {
+        var value = await js.InvokeAsync<string>("booking.getRange", "#dateRange");
+        if (string.IsNullOrWhiteSpace(value) || (!value.Contains("to") && !value.Contains("do")))
+        {
+            await js.InvokeVoidAsync("alert", "⚠️ Wybierz prawidłowy zakres dat.");
+            return;
+        }
+
+        // obsługa obu separatorów (ang/pl)
+        var parts = value
+            .Replace("do", "to", StringComparison.OrdinalIgnoreCase)
+            .Split("to", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+
+
+        if (parts.Length != 2) return;
+
+        if (!DateTime.TryParse(parts[0], out var start) || !DateTime.TryParse(parts[1], out var end))
+        {
+            await js.InvokeVoidAsync("alert", "⚠️ Nie udało się odczytać dat.");
+            return;
+        }
+
+        var token = await Auth.GetTokenAsync();
+        if (!string.IsNullOrEmpty(token))
+        {
+            Http.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        }
+
+        var dto = new
+        {
+            carId = car!.CarId,
+            startRental = start,
+            endRental = end,
+            methodOfPayment = "CreditCard"
+        };
+
+        var res = await Http.PostAsJsonAsync("reservations/create", dto);
+        if (res.IsSuccessStatusCode)
+        {
+            var json = await res.Content.ReadFromJsonAsync<Dictionary<string, object>>();
+            var rentalId = json?["rentalId"]?.ToString();
+
+            await js.InvokeVoidAsync("alert", $"✅ Rezerwacja utworzona! Pobieram proformę...");
+
+            var pdfBytes = await Http.GetByteArrayAsync($"reservations/proforma/{rentalId}");
+            var pdfBase64 = Convert.ToBase64String(pdfBytes);
+
+            await js.InvokeVoidAsync("downloadFileFromBase64", $"Proforma_{rentalId}.pdf", "application/pdf", pdfBase64);
+
+            showModal = false;
+        }
+        else
+        {
+            var err = await res.Content.ReadAsStringAsync();
+
+            if (res.StatusCode == System.Net.HttpStatusCode.Conflict)
+                await js.InvokeVoidAsync("alert", "🚫 Ten samochód jest już zarezerwowany w wybranym terminie.");
+            else
+                await js.InvokeVoidAsync("alert", $"❌ Błąd serwera: {err}");
+        }
+    }
+
+    // Zwróć uwagę: te typy dopasowane do tego co renderujesz
+    // Możesz rozszerzyć/zmienić według potrzeb
+    record Car(
+        Guid CarId, string Brand, string Model, string CarType, decimal PricePerDay,
+        int YearOfProduction, double Battery, int Range, double LoadingTime,
+        string Status, string Location, string Description, string ImageUrl
+    );
+}

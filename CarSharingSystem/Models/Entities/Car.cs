@@ -21,5 +21,7 @@ namespace CarSharingSystem.Models.Entities
         public decimal PricePerDay { get; set; }
         public string Location { get; set; } = string.Empty;
         public List<Rental>? Rentals { get; set; }
+        public string Description { get; set; } = string.Empty;
+        public string ImageUrl { get; set; } = string.Empty;
     }
 }

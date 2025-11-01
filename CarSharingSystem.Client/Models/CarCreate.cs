@@ -14,5 +14,8 @@ namespace CarSharingSystem.Client.Models
         public CarStatus Status { get; set; } = CarStatus.Available;
         public decimal PricePerDay { get; set; }
         public string Location { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public string? ImageUrl { get; set; }
+
     }
 }

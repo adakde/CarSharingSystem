@@ -39,6 +39,14 @@ namespace CarSharingSystem.Migrations
                     b.Property<int>("CarType")
                         .HasColumnType("int");
 
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<double>("LoadingTime")
                         .HasColumnType("float");
 
@@ -74,6 +82,8 @@ namespace CarSharingSystem.Migrations
                             Battery = 100.00m,
                             Brand = "Tesla",
                             CarType = 0,
+                            Description = "",
+                            ImageUrl = "",
                             LoadingTime = 8.0,
                             Location = "",
                             Model = "Model 3",
@@ -88,6 +98,8 @@ namespace CarSharingSystem.Migrations
                             Battery = 85.50m,
                             Brand = "Tesla",
                             CarType = 1,
+                            Description = "Seed car Tesla Model 3",
+                            ImageUrl = "",
                             LoadingTime = 6.0,
                             Location = "",
                             Model = "Model X",
@@ -211,17 +223,17 @@ namespace CarSharingSystem.Migrations
                             Email = "admin@example.com",
                             Name = "Admin",
                             NumberOfDriverLicense = 0,
-                            Password = "Admin123!",
+                            Password = "$2a$11$qvLZVxw81c5h6YzA5P4JtuB4AgjOmFKWk96Kk4y7xZ0zH3vILsb.q",
                             Role = 2
                         },
                         new
                         {
                             UserId = new Guid("00000000-0000-0000-0000-000000000002"),
                             CountryOfDriverLicense = "",
-                            Email = "user1@example.com",
+                            Email = "user1@2example.com",
                             Name = "Jan Kowalski",
                             NumberOfDriverLicense = 0,
-                            Password = "User123!",
+                            Password = "$2a$11$Z8iXshfUZ8Yv1q1O7q4aDeP67AWhEbkGcZzZbLwYxI6w4bA3qneU6",
                             Role = 0
                         });
                 });

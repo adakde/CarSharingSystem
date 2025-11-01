@@ -105,6 +105,8 @@ namespace CarSharingSystem.Controllers
             if (model.Status.HasValue) car.Status = model.Status.Value;
             if (model.PricePerDay.HasValue) car.PricePerDay = model.PricePerDay.Value;
             if (!string.IsNullOrEmpty(model.Location)) car.Location = model.Location;
+            if (!string.IsNullOrEmpty(model.Description)) car.Description = model.Description;
+            if (!string.IsNullOrEmpty(model.ImageUrl)) car.ImageUrl = model.ImageUrl;
 
             await _context.SaveChangesAsync();
             return Ok(new { message = "✅ Car updated successfully!" });
@@ -133,7 +135,9 @@ namespace CarSharingSystem.Controllers
                 LoadingTime = dto.LoadingTime ?? 0,
                 Status = dto.Status,
                 PricePerDay = dto.PricePerDay,
-                Location = dto.Location
+                Location = dto.Location,
+                Description = dto.Description ?? string.Empty,
+                ImageUrl = dto.ImageUrl ?? string.Empty
             };
 
             _context.Cars.Add(car);

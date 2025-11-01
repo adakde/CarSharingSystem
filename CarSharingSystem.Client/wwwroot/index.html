@@ -10,6 +10,42 @@
     <link rel="stylesheet" href="css/app.css" />
     <link rel="icon" type="image/png" href="favicon.png" />
     <link href="CarSharingSystem.Client.styles.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/pl.js"></script>
+
+
+    <script>
+        window.booking = {
+            initRange: function (selector, opts) {
+                const el = document.querySelector(selector);
+                if (!el) return console.error('Nie znaleziono elementu ' + selector);
+                setTimeout(() => {
+                    flatpickr(el, Object.assign({
+                        mode: 'range',
+                        minDate: 'today',
+                        dateFormat: 'Y-m-d',
+                        locale: 'pl'
+                    }, opts || {}));
+                }, 100); // małe opóźnienie = pewność, że input istnieje
+            },
+            getRange: function (selector) {
+                const el = document.querySelector(selector);
+                return el ? el.value : '';
+            }
+        };
+    </script>
+    <script>
+        window.downloadFileFromBase64 = (filename, contentType, base64) => {
+            const link = document.createElement('a');
+            link.href = `data:${contentType};base64,${base64}`;
+            link.download = filename;
+            link.click();
+        };
+    </script>
+
+
+
 </head>
 
 <body>

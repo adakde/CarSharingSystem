@@ -35,44 +35,53 @@ namespace CarSharingSystem.Controllers
 
             return Guid.Parse(sub);
         }
-
         [HttpPost("create")]
         public async Task<IActionResult> Create([FromBody] ReservationCreateDto dto)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
             var userId = CurrentUserId();
 
-            var car = await _context.Cars.FindAsync(dto.CarId);
-            if (car == null) return NotFound("Car not found");
-            if (car.Status != CarStatus.Available) return Conflict("Car is not available");
+            var car = await _context.Cars.FirstOrDefaultAsync(c => c.CarId == dto.CarId);
+            if (car == null)
+                return NotFound("Car not found");
 
-            // Sprawdzanie kolizji terminów
+            if (car.Status != CarStatus.Available)
+                return Conflict("Car is not available");
+
             var overlap = await _context.Rentals.AnyAsync(r =>
                 r.CarId == dto.CarId &&
                 r.Status == RentalStatus.Active &&
                 r.EndRental > dto.StartRental && dto.EndRental > r.StartRental);
 
-            if (overlap) return Conflict("Overlapping reservation");
+            if (overlap)
+                return Conflict("Overlapping reservation");
+
+            var totalDays = (dto.EndRental.Date - dto.StartRental.Date).Days;
+            if (totalDays <= 0)
+                totalDays = 1;
+
+            var totalPrice = car.PricePerDay * totalDays;
+
             var rental = new Rental
             {
-                RentalId = Guid.NewGuid(),
+                CarId = dto.CarId,
                 UserId = userId,
-                CarId = car.CarId,
-                StartRental = dto.StartRental.ToUniversalTime(),
-                EndRental = dto.EndRental.ToUniversalTime(),
+                StartRental = dto.StartRental,
+                EndRental = dto.EndRental,
                 Status = RentalStatus.Active,
                 MethodOfPayment = dto.MethodOfPayment,
-                Description = dto.Description ?? string.Empty,
-                IsPaid = false
+                RentalPrice = totalPrice
             };
 
+            // 🔹 Aktualizacja statusu samochodu
             car.Status = CarStatus.Borrowed;
 
             _context.Rentals.Add(rental);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Reservation created successfully", rental.RentalId });
+            return Ok(new { rental.RentalId });
         }
 
         [HttpPost("end/{id:guid}")]
@@ -108,6 +117,56 @@ namespace CarSharingSystem.Controllers
 
             return Ok(list);
         }
+        [HttpGet("busy/{carId:guid}")]
+        public async Task<IActionResult> GetBusyDates(Guid carId)
+        {
+            var reservations = await _context.Rentals
+                .Where(r => r.CarId == carId && r.Status == RentalStatus.Active)
+                .Select(r => new
+                {
+                    from = r.StartRental,
+                    to = r.EndRental
+                })
+                .ToListAsync();
+
+            return Ok(reservations);
+        }
+
+        [HttpGet("proforma/{rentalId:guid}")]
+        public async Task<IActionResult> GetProforma(Guid rentalId)
+        {
+            var rental = await _context.Rentals
+                .Include(r => r.Car)
+                .Include(r => r.User)
+                .FirstOrDefaultAsync(r => r.RentalId == rentalId);
+
+            if (rental == null)
+                return NotFound("Nie znaleziono rezerwacji.");
+
+            using var stream = new MemoryStream();
+            using (var writer = new StreamWriter(stream))
+            {
+                writer.WriteLine("FAKTURA PROFORMA");
+                writer.WriteLine("----------------------------");
+                writer.WriteLine($"Data wystawienia: {DateTime.Now:yyyy-MM-dd}");
+                writer.WriteLine($"Numer: {rental.RentalId}");
+                writer.WriteLine();
+                writer.WriteLine($"Klient: {rental.User?.Name} ({rental.User?.Email})");
+                writer.WriteLine($"Samochód: {rental.Car?.Brand} {rental.Car?.Model}");
+                writer.WriteLine($"Okres: {rental.StartRental:yyyy-MM-dd} → {rental.EndRental:yyyy-MM-dd}");
+                writer.WriteLine($"Kwota brutto: {rental.RentalPrice} PLN");
+                writer.WriteLine("----------------------------");
+                writer.WriteLine("Dziękujemy za skorzystanie z CarSharingSystem!");
+                writer.Flush();
+            }
+
+            var bytes = stream.ToArray();
+
+            // Możesz w przyszłości użyć biblioteki PDF (np. iText7, QuestPDF),
+            // ale na start wystarczy czysty tekst + nagłówek PDF.
+            return File(bytes, "application/pdf", $"Proforma_{rental.RentalId}.pdf");
+        }
+
         [HttpGet("history")]
         public async Task<IActionResult> History()
         {
