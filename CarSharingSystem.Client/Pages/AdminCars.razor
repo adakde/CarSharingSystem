@@ -2,14 +2,15 @@
 @using CarSharingSystem.Client.Models
 @using CarSharingSystem.Client.Services
 @using Microsoft.AspNetCore.Authorization
+@using System.Net.Http.Json
 @inject HttpClient Http
 @inject IJSRuntime js
 @inject AuthService Auth
-@attribute [Authorize(Roles = "Admin")]
+@attribute [Authorize(Roles = "Admin,Worker")]
 
 <h3>🚗 Panel administratora - zarządzanie samochodami</h3>
 
-@if (!isAdmin)
+@if (!(isAdmin || isWorker))
 {
     <div class="alert alert-danger mt-3">
         Brak uprawnień do wyświetlenia tej strony.
@@ -84,8 +85,13 @@ else
                         <td>@c.PricePerDay</td>
                         <td>@c.Status</td>
                         <td>
-                            <button class="btn btn-primary btn-sm me-1" @onclick="() => OpenEditModal(c)">Edytuj</button>
-                            <button class="btn btn-danger btn-sm" @onclick="() => DeleteCar(c.CarId)">Usuń</button>
+                            <button class="btn btn-primary btn-sm me-1" @onclick="() => OpenEditModal(c)">Edytuj pojazd</button>
+                            <button type="button"
+                                    class="btn btn-info btn-sm"
+                                    @onclick="@(() => ShowHistory(c.CarId))">
+                                📜 Historia
+                            </button>
+                            <button class="btn btn-danger btn-sm" @onclick="() => DeleteCar(c.CarId)">Usuń pojazd</button>
                         </td>
                     </tr>
                 }
@@ -143,17 +149,68 @@ else
                 </div>
             </div>
         }
-
+        @if (showHistory)
+        {
+            <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.4)">
+                <div class="modal-dialog modal-lg modal-dialog-centered">
+                    <div class="modal-content p-3">
+                        <div class="modal-header">
+                            <h5 class="modal-title">📜 Historia wynajmu – @selectedCarName</h5>
+                            <button class="btn-close" @onclick="() => showHistory = false"></button>
+                        </div>
+                        <div class="modal-body">
+                            @if (history == null)
+                            {
+                                <p>Ładowanie...</p>
+                            }
+                            else if (!history.Any())
+                            {
+                                <p>Brak historii wynajmu dla tego pojazdu.</p>
+                            }
+                            else
+                            {
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Użytkownik</th>
+                                            <th>Okres</th>
+                                            <th>Status</th>
+                                            <th>Płatność</th>
+                                            <th>Kwota (zł)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var h in history)
+                                        {
+                                            <tr>
+                                                <td>@h.User</td>
+                                                <td>@h.StartRental.ToString("yyyy-MM-dd") → @h.EndRental.ToString("yyyy-MM-dd")</td>
+                                                <td>@h.Status</td>
+                                                <td>@h.MethodOfPayment</td>
+                                                <td>@h.RentalPrice</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
     }
 }
 
 @code {
+    private bool showHistory = false;
+    private string selectedCarName = string.Empty;
+    private List<CarHistoryDto>? history;
     private List<Car>? cars;
     private CarCreate newCar = new();
     private bool isAdmin;
     private CarEdit? editCar;
     private bool showEditModal = false;
-
+    private bool isWorker;
     protected override async Task OnInitializedAsync()
     {
         var token = await Auth.GetTokenAsync();
@@ -174,8 +231,20 @@ else
         Console.WriteLine($"[AdminCars] Token role: {role}");
 
         isAdmin = role?.Equals("Admin", StringComparison.OrdinalIgnoreCase) ?? false;
+        isWorker = role?.Equals("Worker", StringComparison.OrdinalIgnoreCase) ?? false;
 
         if (isAdmin)
+        {
+            try
+            {
+                cars = await Http.GetFromJsonAsync<List<Car>>("cars/getall");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AdminCars] Błąd przy ładowaniu aut: {ex.Message}");
+            }
+        }
+        if (isWorker)
         {
             try
             {
@@ -262,6 +331,33 @@ else
             await js.InvokeVoidAsync("alert", $"❌ Błąd przy zapisie: {err}");
         }
     }
+    private async Task ShowHistory(Guid carId)
+    {
+        var token = await Auth.GetTokenAsync();
+        if (!string.IsNullOrEmpty(token))
+            Http.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var res = await Http.GetFromJsonAsync<CarHistoryResponse>($"cars/{carId}/history");
+        if (res != null)
+        {
+            selectedCarName = res.Car;
+            history = res.History;
+            showHistory = true;
+            StateHasChanged();
+        }
+    }
+
+    record CarHistoryResponse(string Car, List<CarHistoryDto> History);
+    record CarHistoryDto(
+        Guid RentalId,
+        string User,
+        DateTime StartRental,
+        DateTime EndRental,
+        string Status,
+        string MethodOfPayment,
+        decimal RentalPrice
+    );
 
     class CarEdit
     {

@@ -84,7 +84,7 @@ namespace CarSharingSystem.Controllers
             }
             return Ok(car);
         }
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Worker")]
         [HttpPut("update/{id:guid}")]
         public async Task<IActionResult> UpdateCar(Guid id, [FromBody] CarUpdateDto model)
         {
@@ -111,7 +111,7 @@ namespace CarSharingSystem.Controllers
             await _context.SaveChangesAsync();
             return Ok(new { message = "✅ Car updated successfully!" });
         }
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Worker")]
         [HttpPost("add")]
         public async Task<IActionResult> AddCar([FromBody] CarCreateDto dto)
         {
@@ -145,7 +145,7 @@ namespace CarSharingSystem.Controllers
 
             return Ok(new { message = "Samochód dodany pomyślnie!" });
         }
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Worker")]
         [HttpDelete("{id:guid}")]
         public async Task<IActionResult> DeleteCar(Guid id)
         {
@@ -174,6 +174,35 @@ namespace CarSharingSystem.Controllers
             }
 
         }
+        [Authorize(Roles = "Admin,Worker")]
+        [HttpGet("{id:guid}/history")]
+        public async Task<IActionResult> GetCarHistory(Guid id)
+        {
+            var car = await _context.Cars.FindAsync(id);
+            if (car == null)
+                return NotFound("Car not found.");
 
+            var history = await _context.Rentals
+                .Include(r => r.User)
+                .Where(r => r.CarId == id)
+                .OrderByDescending(r => r.StartRental)
+                .Select(r => new
+                {
+                    r.RentalId,
+                    User = r.User.Name + " (" + r.User.Email + ")",
+                    r.StartRental,
+                    r.EndRental,
+                    r.Status,
+                    r.MethodOfPayment,
+                    r.RentalPrice
+                })
+                .ToListAsync();
+
+            return Ok(new
+            {
+                Car = car.Brand + " " + car.Model,
+                History = history
+            });
+        }
     }
 }

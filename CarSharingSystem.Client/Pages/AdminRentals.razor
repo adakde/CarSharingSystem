@@ -1,0 +1,99 @@
+﻿@page "/admin/rentals"
+@using CarSharingSystem.Client.Models
+@inject HttpClient Http
+@inject IJSRuntime js
+@inject CarSharingSystem.Client.Services.AuthService Auth
+
+
+<h3>🧾 Zarządzanie rezerwacjami</h3>
+
+@if (rentals == null)
+{
+    <p>Ładowanie...</p>
+}
+else if (!rentals.Any())
+{
+    <div class="alert alert-info mt-3">Brak rezerwacji w systemie.</div>
+}
+else
+{
+    <table class="table table-striped table-bordered mt-3">
+        <thead class="table-dark">
+            <tr>
+                <th>Użytkownik</th>
+                <th>Samochód</th>
+                <th>Okres</th>
+                <th>Status</th>
+                <th>Płatność</th>
+                <th>Kwota (zł)</th>
+                <th>Akcje</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in rentals)
+            {
+                <tr>
+                    <td>@r.User</td>
+                    <td>@r.Car</td>
+                    <td>@r.StartRental.ToString("yyyy-MM-dd") → @r.EndRental.ToString("yyyy-MM-dd")</td>
+                    <td>@r.Status</td>
+                    <td>@r.MethodOfPayment</td>
+                    <td>@r.RentalPrice</td>
+                    <td>
+                        <button type="button"
+                                class="btn btn-info btn-sm"
+                                style="color: green;"
+                                @onclick='() => UpdateStatus(r.RentalId, "Active")'>
+                            Znów Rezerwacje
+                        </button>
+                        <button class="btn btn-sm btn-outline-success me-2" style="color: darkgray"
+                                @onclick='() => UpdateStatus(r.RentalId, "Closed")'>
+                            Zakończ
+                        </button>
+
+                        <button class="btn btn-sm btn-outline-danger"
+                                @onclick='() => UpdateStatus(r.RentalId, "Cancelled")'>
+                            Anuluj
+                        </button>
+                    </td>
+
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<RentalDto>? rentals;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var token = await Auth.GetTokenAsync();
+        if (!string.IsNullOrEmpty(token))
+            Http.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        rentals = await Http.GetFromJsonAsync<List<RentalDto>>("reservations/all");
+    }
+
+    private async Task UpdateStatus(Guid id, string status)
+    {
+        var token = await Auth.GetTokenAsync();
+        if (!string.IsNullOrEmpty(token))
+            Http.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var res = await Http.PutAsJsonAsync($"reservations/{id}/status", new { Status = status });
+
+        if (res.IsSuccessStatusCode)
+        {
+            await js.InvokeVoidAsync("alert", $"✅ Status zmieniony na {status}");
+            rentals = await Http.GetFromJsonAsync<List<RentalDto>>("reservations/all");
+        }
+        else
+        {
+            var err = await res.Content.ReadAsStringAsync();
+            await js.InvokeVoidAsync("alert", $"❌ Błąd: {err}");
+        }
+    }
+}

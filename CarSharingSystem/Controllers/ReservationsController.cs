@@ -191,6 +191,50 @@ namespace CarSharingSystem.Controllers
 
             return Ok(history);
         }
+        [Authorize(Roles = "Admin,Worker")]
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAll()
+        {
+            var rentals = await _context.Rentals
+                .Include(r => r.Car)
+                .Include(r => r.User)
+                .OrderByDescending(r => r.StartRental)
+                .Select(r => new
+                {
+                    r.RentalId,
+                    r.StartRental,
+                    r.EndRental,
+                    r.Status,
+                    r.RentalPrice,
+                    Car = r.Car.Brand + " " + r.Car.Model,
+                    User = r.User.Name + " (" + r.User.Email + ")",
+                    r.MethodOfPayment
+                })
+                .ToListAsync();
+
+            return Ok(rentals);
+        }
+        [Authorize(Roles = "Admin,Worker")]
+        [HttpPut("{id:guid}/status")]
+        public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateStatusDto dto)
+        {
+            var rental = await _context.Rentals.FindAsync(id);
+            if (rental == null)
+                return NotFound("Nie znaleziono rezerwacji.");
+
+            if (!Enum.TryParse<RentalStatus>(dto.Status, true, out var newStatus))
+                return BadRequest("Niepoprawny status.");
+
+            rental.Status = newStatus;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = $"Status zmieniony na {newStatus}." });
+        }
+
+        public class UpdateStatusDto
+        {
+            public string Status { get; set; } = string.Empty;
+        }
 
     }
 }

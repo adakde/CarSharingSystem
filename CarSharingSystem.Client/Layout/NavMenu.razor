@@ -25,36 +25,9 @@
                 </NavLink>
             </div>
         }
-        else if (isAdmin || isWorker)
-        {
-            <!-- 🔸 Admin / Worker -->
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="/cars" Match="NavLinkMatch.All">
-                    <span class="bi bi-car-front"></span> Samochody
-                </NavLink>
-            </div>
-
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="/admin/cars" Match="NavLinkMatch.All">
-                    <span class="bi bi-wrench-adjustable-circle"></span> Zarządzanie flotą
-                </NavLink>
-            </div>
-
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="/admin/users" Match="NavLinkMatch.All">
-                    <span class="bi bi-people"></span> Użytkownicy
-                </NavLink>
-            </div>
-
-            <div class="nav-item px-3">
-                <NavLink class="nav-link text-danger" href="/logout" Match="NavLinkMatch.All">
-                    <span class="bi bi-box-arrow-right"></span> Wyloguj
-                </NavLink>
-            </div>
-        }
         else if (isUser)
         {
-            <!-- 🔸 Zwykły użytkownik -->
+            <!-- 🔸 Zalogowany – Użytkownik -->
             <div class="nav-item px-3">
                 <NavLink class="nav-link" href="/cars" Match="NavLinkMatch.All">
                     <span class="bi bi-car-front"></span> Samochody
@@ -72,6 +45,56 @@
                     <span class="bi bi-clock-history"></span> Historia
                 </NavLink>
             </div>
+
+            <div class="nav-item px-3">
+                <NavLink class="nav-link text-danger" href="/logout" Match="NavLinkMatch.All">
+                    <span class="bi bi-box-arrow-right"></span> Wyloguj
+                </NavLink>
+            </div>
+        }
+        else if (isWorker || isAdmin)
+        {
+            <!-- 🔸 Zalogowany – Pracownik / Admin -->
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="/cars" Match="NavLinkMatch.All">
+                    <span class="bi bi-car-front"></span> Samochody
+                </NavLink>
+            </div>
+
+            @if (isAdmin)
+            {
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/admin/cars" Match="NavLinkMatch.All">
+                        <span class="bi bi-wrench-adjustable-circle"></span> Zarządzanie flotą
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/admin/rentals" Match="NavLinkMatch.All">
+                        <span class="bi bi-receipt"></span> Rezerwacje
+                    </NavLink>
+                </div>
+
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/admin/users" Match="NavLinkMatch.All">
+                        <span class="bi bi-people"></span> Użytkownicy
+                    </NavLink>
+                </div>
+            }
+
+            @if (isWorker)
+            {
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/admin/cars" Match="NavLinkMatch.All">
+                        <span class="bi bi-wrench-adjustable-circle"></span> Zarządzanie flotą
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="/admin/rentals" Match="NavLinkMatch.All">
+                        <span class="bi bi-receipt"></span> Rezerwacje
+                    </NavLink>
+                </div>
+            }
 
             <div class="nav-item px-3">
                 <NavLink class="nav-link text-danger" href="/logout" Match="NavLinkMatch.All">
